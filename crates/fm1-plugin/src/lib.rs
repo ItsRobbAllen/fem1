@@ -17,6 +17,7 @@ use std::sync::{mpsc, Arc, Mutex};
 mod editor;
 mod appearance;
 mod panel_menu;
+mod realistic_panel;
 mod default_firmware;
 mod controls;
 pub mod engine;
@@ -159,7 +160,7 @@ impl Lead {
 impl Default for Fm1Params {
     fn default() -> Self {
         Self {
-            editor_state: EguiState::from_size(960, 660),
+            editor_state: EguiState::from_size(1125, 690),
             firmware: Mutex::new(default_firmware::stock()),
             flash: Mutex::new(Vec::new()),
             case_color: Mutex::new(appearance::CaseColor::default()),

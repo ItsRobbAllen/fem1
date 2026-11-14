@@ -176,3 +176,31 @@ linking. OCT−/HOME emulated LED behavior remains unchanged as documented above
 
 Next: get user feedback on this visual direction before implementing the new
 renderer, updating hit targets, and validating firmware shortcut behavior.
+
+### 2026-11-14 — approved realistic panel implemented
+
+- Embedded the approved panel artwork in five theme variants: textured shell,
+  beveled rim, recessed trays, molded keys, ridged knobs and printed shortcut
+  legends. Assets total about 1.6 MB; no external artwork or fonts are needed.
+- New plug-in renderer replaces the sample screen with the live RGB565 firmware
+  framebuffer, rotates encoder/master caps, and renders pressed/LED feedback.
+  Existing matrix IDs, automation IDs and saved theme values are preserved.
+- Matched every new control hit target to its artwork. Added exhaustive center
+  checks for 27 keys, 14 buttons and 8 knobs, plus embedded-theme/LCD/pressed-key
+  rendering tests. New windows default to the artwork's aspect ratio. Existing
+  saved window sizes fit the panel proportionally. SMK retains its old renderer.
+- Validation: 26 release tests and all 47 VST3 validator checks passed. Inspected
+  actual booted firmware renders in all five themes (target/plugin/realistic-preview).
+  This is renderer/validator testing; interactive FL Studio testing remains.
+- Built and packaged target/plugin/release/fem1-plugin-0.5.1-windows-x86_64-realistic.zip
+  with both VST3 and CLAP, installer and firmware notices. Did not replace plug-in
+  files while the user's DAW is running. Close FL Studio and use the same installer
+  scope as the previous working installation.
+- Published through GitHub Git-object tools, with matching local/remote tree and
+  a backup branch retaining local checkpoint history. Build tooling instructions
+  and the optional live-firmware visual QA path are in docs/design/README.md.
+
+Next: install the realistic package and verify pointer alignment, popup actions,
+knob linking and theme/project recall in FL Studio. Shortcut legends preserve
+existing physical key positions; their firmware behavior is not hardware-verified.
+OCT−/HOME LED timing remains unchanged.

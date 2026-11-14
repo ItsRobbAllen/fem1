@@ -419,6 +419,24 @@ mod portable_tests {
         assert!(m.soc.periph.ms() >= 4000, "stock boot timed out");
         assert!(m.soc.lcd.fb.iter().filter(|&&p| p != 0).count() > 1000);
         assert!(sounded, "stock firmware should sound on MIDI channel 2");
+        // Opt-in visual QA: use the real booted firmware framebuffer, not sample artwork.
+        if let Some(dir) = std::env::var_os("FEM1_PANEL_PREVIEW") {
+            let dir = std::path::PathBuf::from(dir);
+            std::fs::create_dir_all(&dir).unwrap();
+            for color in crate::appearance::CaseColor::ALL {
+                let base = crate::realistic_panel::base(color);
+                let mut pixels = vec![0; base.len()];
+                crate::realistic_panel::draw(&mut pixels, &base, &crate::panel::State {
+                    lcd: &m.soc.lcd.fb, enc_clicks: &[0;7], pot: 800,
+                    down: &[false;41], leds: &[0.;41], turning: &[0;8],
+                }, false, false);
+                let file = std::fs::File::create(dir.join(format!("{}.png", color.name()))).unwrap();
+                let mut encoder = png::Encoder::new(file, crate::realistic_panel::W as u32, crate::realistic_panel::H as u32);
+                encoder.set_color(png::ColorType::Rgb); encoder.set_depth(png::BitDepth::Eight);
+                let bytes: Vec<u8> = pixels.iter().flat_map(|p| [(p>>16) as u8,(p>>8) as u8,*p as u8]).collect();
+                encoder.write_header().unwrap().write_image_data(&bytes).unwrap();
+            }
+        }
     }
     fn machine() -> Machine {
         let soc = Soc::new(RAM_SIZE, vec![0x55; 0x80000]);

@@ -41,6 +41,7 @@ rect(389,80,353,361,40,'#050607','stroke="#414548" stroke-width="1.5"');
 rect(392,83,347,355,38,'url(#glass)');
 add('<path d="M407 86 H655 L397 343 V107 Q397 87 407 86" fill="#fff" opacity=".025"/>');
 rect(422,121,286,267,6,'#0a0e11','stroke="#020303" stroke-width="5"');
+add('<g id="sample-screen">');
 rect(424,123,282,263,4,'url(#lcd)','stroke="#d0e8ed" stroke-width="1.5"');
 text(535,155,'001 PIANO 1',23,'#203640');
 rect(668,136,24,22,2,'#e3edf0');rect(674,140,4,14,0,'#27353c');rect(682,140,4,14,0,'#27353c');
@@ -48,6 +49,7 @@ add('<path d="M429 171 H701 M429 340 H701" stroke="#608e9e" opacity=".8"/>');
 ['Filter','Reverb','Delay','Distort','Chorus','Phaser'].forEach((s,i)=>{const x=432+(i%3)*89,y=180+Math.floor(i/3)*76;rect(x,y,81,58,3,'#87aabd','stroke="#d0e2e7"');rect(x+2,y+2,77,54,2,'#8aaebf','stroke="#668c9c"');text(x+40,y+36,s,19,'#233c48');});
 add('<circle cx="472" cy="247" r="4.8" fill="#ea5d35"/>');
 rect(445,349,241,29,3,'#d2e7ea','stroke="#638e9d"');text(565,370,'Type: LOW PASS',21,'#273d46');
+add('</g>');
 function tray(x,y,w,h,r=23){rect(x,y,w,h,r,'#08090a','stroke="#82878a" stroke-opacity=".5"');rect(x+3,y+3,w-6,h-6,r-2,'url(#tray)','stroke="#090a0b" stroke-width="2"');}
 function button(x,y,w,h,label){
  rect(x,y,w,h,12,'#080a0b','filter="url(#shadow)"');
@@ -88,3 +90,17 @@ if(process.argv.includes('--png')){
  fs.writeFileSync(path.join(__dirname,'../../target/ui-preview/realistic-panel-preview.png'),new Resvg(svg.join('\n'),{font:{loadSystemFonts:true}}).render().asPng());
 }
 console.log(out);
+if(process.argv.includes('--assets')) (async()=>{
+ const {Resvg}=require('../../target/ui-preview/node_modules/@resvg/resvg-js');
+ const sharp=require('../../target/ui-preview/node_modules/sharp');
+ const dir=path.join(__dirname,'../../crates/fm1-plugin/resources/panel'); fs.mkdirSync(dir,{recursive:true});
+ const themes={black:[],green:[['#393d41','#afd1b6'],['#292c30','#90b49a'],['#202327','#71947b']],orange:[['#303235','#ed8a3d'],['#222427','#d77731'],['#1b1d20','#b65a24']],purple:[['#303235','#a99ac7'],['#222427','#9180b1'],['#1b1d20','#746192'],['#393d41','#d2c6e3'],['#292c30','#b4a4cc'],['#202327','#9987b3']],white:[['#303235','#e1e5e6'],['#222427','#cbd1d3'],['#1b1d20','#a5afb4'],['#393d41','#8eacc8'],['#292c30','#7192b3'],['#202327','#537493']]};
+ for(const [name,replacements] of Object.entries(themes)){
+  let source=svg.join('\n').replace(/<g id="sample-screen">[\s\S]*?<\/g>/,'<rect x="424" y="123" width="282" height="263" fill="#000"/>');
+  for(const [from,to] of replacements) source=source.replaceAll(from,to);
+  if(name==='green'||name==='purple') for(const ink of ['#eff0ec','#e5e8e5'])source=source.replaceAll(ink,name==='green'?'#263d2d':'#352744');
+  if(['orange','purple','white'].includes(name)) source=source.replaceAll('#dedfdc','#303338');
+  const png=new Resvg(source,{font:{loadSystemFonts:true}}).render().asPng();
+  await sharp(png).png({palette:true,colours:128,dither:0,compressionLevel:9}).toFile(path.join(dir,`${name}.png`));
+ }
+})().catch(e=>{console.error(e);process.exitCode=1;});

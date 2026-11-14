@@ -365,6 +365,7 @@
 <rect x="392" y="83" width="347" height="355" rx="38" fill="url(#glass)" />
 <path d="M407 86 H655 L397 343 V107 Q397 87 407 86" fill="#fff" opacity=".025"/>
 <rect x="422" y="121" width="286" height="267" rx="6" fill="#0a0e11" stroke="#020303" stroke-width="5"/>
+<g id="sample-screen">
 <rect x="424" y="123" width="282" height="263" rx="4" fill="url(#lcd)" stroke="#d0e8ed" stroke-width="1.5"/>
 <text x="535" y="155" text-anchor="middle" font-family="Arial, sans-serif" font-size="23" fill="#203640" >001 PIANO 1</text>
 <rect x="668" y="136" width="24" height="22" rx="2" fill="#e3edf0" />
@@ -392,6 +393,7 @@
 <circle cx="472" cy="247" r="4.8" fill="#ea5d35"/>
 <rect x="445" y="349" width="241" height="29" rx="3" fill="#d2e7ea" stroke="#638e9d"/>
 <text x="565" y="370" text-anchor="middle" font-family="Arial, sans-serif" font-size="21" fill="#273d46" >Type: LOW PASS</text>
+</g>
 <rect x="91" y="397" width="235" height="74" rx="15" fill="#08090a" stroke="#82878a" stroke-opacity=".5"/>
 <rect x="94" y="400" width="229" height="68" rx="13" fill="url(#tray)" stroke="#090a0b" stroke-width="2"/>
 <rect x="101" y="406" width="99" height="53" rx="12" fill="#080a0b" filter="url(#shadow)"/>

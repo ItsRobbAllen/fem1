@@ -84,11 +84,11 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
         if board != ui.board || color != ui.color || ui.base.is_empty() {
             ui.color = color;
             ui.board = board;
-            ui.base = if board == Board::Smk37 { panel_smk::base() } else { panel::base_with_palette(&color.palette()) };
+            ui.base = if board == Board::Smk37 { panel_smk::base() } else { crate::realistic_panel::base(color) };
             ui.buf = vec![0; ui.base.len()];
         }
         let smk = board == Board::Smk37;
-        let (w, h) = if smk { (panel_smk::W, panel_smk::H) } else { (panel::W, panel::H) };
+        let (w, h) = if smk { (panel_smk::W, panel_smk::H) } else { (crate::realistic_panel::W, crate::realistic_panel::H) };
 
         if ui.msg_until.is_some_and(|until| std::time::Instant::now() >= until) {
             ui.msg.clear(); ui.msg_until = None;
@@ -120,8 +120,9 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
             let resp = c.allocate_rect(rect, egui::Sense::click_and_drag());
             let at = |p: egui::Pos2| ((p.x - rect.min.x) / k, (p.y - rect.min.y) / k);
 
+            let (mx,my,mw,mh) = if smk { (w-164,12,136,44) } else { crate::realistic_panel::MENU };
             let menu_rect = egui::Rect::from_min_size(
-                rect.min + egui::vec2((w as f32 - 164.0) * k, if smk { 12.0 * k } else { 405.0 * k }), egui::vec2(136.0 * k, 44.0 * k));
+                rect.min + egui::vec2(mx as f32*k,my as f32*k),egui::vec2(mw as f32*k,mh as f32*k));
             let menu_open = ctx.memory(|m| m.any_popup_open());
             let on_menu = ctx.input(|i| i.pointer.interact_pos().is_some_and(|p| menu_rect.contains(p)));
             // the pointer
@@ -262,13 +263,13 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
                     leds: &leds,
                     turning: &std::array::from_fn(|i| ui.turning[i]),
                 };
-                panel::draw_with_palette(&mut ui.buf, &ui.base, &st, &color.palette());
+                crate::realistic_panel::draw(&mut ui.buf, &ui.base, &st,
+                    menu_open || (on_menu && ctx.input(|i| i.pointer.primary_down())), on_menu);
             }
             // Render in the same pixel font, material and scale as the panel keys.
             // The transparent egui button below supplies popup/focus behavior only.
-            crate::panel_menu::draw(&mut ui.buf, w, if smk { 12.0 } else { 405.0 },
-                if smk { panel::ORIGINAL } else { color.palette() },
-                menu_open || (on_menu && ctx.input(|i| i.pointer.primary_down())), on_menu);
+            if smk { crate::panel_menu::draw(&mut ui.buf, w, 12.0, panel::ORIGINAL,
+                menu_open || (on_menu && ctx.input(|i| i.pointer.primary_down())), on_menu); }
             for t in ui.turning.iter_mut() {
                 *t = t.saturating_sub(1);
             }
@@ -468,7 +469,7 @@ fn hit(smk: bool, x: f32, y: f32) -> i32 {
             None => -1,
         };
     }
-    match panel::hit(x, y) {
+    match crate::realistic_panel::hit(x, y) {
         Some(panel::Ctl::Enc(i)) => i as i32,
         Some(panel::Ctl::Pot) => 7,
         Some(panel::Ctl::Btn(id)) | Some(panel::Ctl::Key(id)) => 100 + id as i32,
