@@ -59,3 +59,31 @@ Validation:
 Next: install in the system folders and run the FL Studio checklist. This is an
 initial renamed prototype (version inherited from upstream: 0.5.1), not a new
 public release. Broader synth/groovebox/sampler qualification remains pending.
+
+## 2026-11-14 — Panel menu, finishes, and DAW recording
+
+- Removed the top toolbar. Added an on-panel Menu for firmware import/export,
+  case finishes, and Advanced controls. File work keeps running with menus closed.
+- Added Black, Green, Orange, Purple, and White finishes from the user's linked
+  Amazon listing (approximate hardware-inspired palettes). Each instance saves
+  its finish in DAW state; old projects default to Black. LCD and LED states are
+  unaffected. SMK-37 retains its dedicated panel.
+- Removed the plug-in's WAV recording command and engine path. The hardware REC
+  button remains a firmware input. Recording/rendering is handled by the DAW.
+- Kept MIDI override, CPU Clock, and Lead in Advanced. Existing parameter IDs and
+  defaults remain compatible with saved projects and automation.
+- Tests: all 20 release plug-in tests passed, including new finish persistence,
+  legacy-state fallback, LCD preservation, and pressed-key feedback checks.
+  All 47 Steinberg VST3 validator checks passed with the new CLAP engine in an
+  isolated preview folder (to avoid accidentally loading the installed old build).
+- Native preview showed the toolbar removed and theme rendering, but the SDK
+  editor host clips the panel at this display scaling; full dropdown interaction
+  and visual verification remain for FL Studio. No user FL Studio project edited.
+- Build/package completed locally. Updated package is
+  `target/plugin/release/fem1-plugin-0.5.1-windows-x86_64-colors.zip`.
+  Close FL Studio and reinstall both companion files with administrator rights
+  before testing. The active installed plug-in was not replaced while FL Studio
+  was running.
+
+Next: verify menu operation, all five finishes, and reopen a saved FL Studio
+project to check the selected finish and firmware together.

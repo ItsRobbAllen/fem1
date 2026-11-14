@@ -28,11 +28,37 @@ is needed. The Windows zip also includes `Install.ps1`; extract the zip and run
 
 ## FL Studio acceptance checklist
 
+### Panel menu and colors
+
+The plug-in's toolbar is now a **Menu** dropdown on the instrument panel. It holds
+firmware import, portable save export, and **Case color**: Black, Green, Orange,
+Purple, and White, inspired by the [linked product listing](https://www.amazon.com/dp/B0H5VCT7XK).
+The finish is saved per plug-in instance in the DAW project. It does not change
+firmware, sound, LCD contents, or the firmware's LED states. FM-1 case finishes
+apply to the FM-1 panel; SMK-37 firmware retains its own keyboard panel.
+
+The plug-in WAV recorder has been removed; record and render using the DAW.
+The panel's hardware **REC** key still goes to the firmware's sequencer.
+
+**Menu > Advanced** retains MIDI channel override (default: as sent by the DAW),
+emulated CPU clock (default: 240 MHz), and audio safety buffer / Lead (default:
+23 ms). MIDI routing belongs in the DAW normally, but some firmware expects a
+specific channel. CPU clock changes the emulated hardware's speed and restarts
+the firmware. Lead is extra scheduling time for the emulator, beyond the host
+block; lowering it reduces live latency while increasing dropout risk. These
+settings remain available for compatibility and performance troubleshooting.
+
+For an update, close FL Studio before running the extracted package's
+`Install.ps1 -SystemInstall` in an administrator PowerShell. Replace both the
+VST3 and CLAP companion. Reopen FL Studio and rescan if it still shows the old UI.
+
+### Host checks
+
 1. Save any current FL Studio project before testing. Install to the system
    locations above. Open **Options > File settings > Manage plugins** and run
    **Find installed plugins** with **Verify plugins** enabled. Look for
    **F'Em 1** / **FEm1**, vendor **ItsRobbAllen**.
-2. Add the VST3 as an instrument. Open **Load firmware / save…** and select a
+2. Add the VST3 as an instrument. Open **Menu > Load firmware / save…** and select a
    `.fwsc` package obtained from its author. No firmware is bundled here.
 3. Play the panel with the mouse, then play MIDI from FL Studio's piano roll.
    Check the firmware's MIDI channel; M-VAVE's stock firmware listens on 2.

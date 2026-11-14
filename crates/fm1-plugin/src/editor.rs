@@ -4,6 +4,7 @@
 //! that is the host's "Master" parameter), and a bar to load a firmware package.
 
 use crate::engine::Cmd;
+use crate::appearance::CaseColor;
 use crate::{panel, panel_smk, Clock, Fm1Params, Lead, Link};
 use fm1_soc::Board;
 use nih_plug::prelude::*;
@@ -20,6 +21,7 @@ struct Grab {
 
 struct Ui {
     board: Board,
+    color: CaseColor,
     base: Vec<u32>,
     buf: Vec<u32>,
     rgba: Vec<u8>,
@@ -45,6 +47,7 @@ impl Default for Ui {
         analog[fm1_soc::smk::ANALOG_MOD as usize] = fm1_soc::smk::MOD_REST;
         Ui {
             board: Board::Fm1,
+            color: CaseColor::default(),
             base: Vec::new(),
             buf: Vec::new(),
             rgba: Vec::new(),
@@ -77,86 +80,38 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
             let v = link.shared.view.lock().unwrap();
             (v.lcd.clone(), v.leds, v.pads, v.board, v.booted, v.halted, v.speed, v.late)
         };
-        if board != ui.board || ui.base.is_empty() {
+        let color = *params.case_color.lock().unwrap();
+        if board != ui.board || color != ui.color || ui.base.is_empty() {
+            ui.color = color;
             ui.board = board;
-            ui.base = if board == Board::Smk37 { panel_smk::base() } else { panel::base() };
+            ui.base = if board == Board::Smk37 { panel_smk::base() } else { panel::base_with_palette(&color.palette()) };
             ui.buf = vec![0; ui.base.len()];
         }
         let smk = board == Board::Smk37;
         let (w, h) = if smk { (panel_smk::W, panel_smk::H) } else { (panel::W, panel::H) };
 
-        egui::TopBottomPanel::top("bar").show(ctx, |bar| {
-            bar.horizontal_wrapped(|bar| {
-                if ui.msg_until.is_some_and(|until| std::time::Instant::now() >= until) {
-                    ui.msg.clear(); ui.msg_until = None;
-                }
-                if let Some(result) = ui.job.as_ref().and_then(|job| job.lock().unwrap().take()) {
-                    ui.job = None;
-                    ui.msg_until = result.as_ref().ok().map(|_| std::time::Instant::now() + std::time::Duration::from_secs(3));
-                    ui.msg = match result { Ok(message) => message, Err(error) => error };
-                }
-                let name = params.firmware.lock().unwrap().name.clone();
-                let idle = ui.picking.is_none() && ui.job.is_none();
-                if bar.add_enabled(idle, egui::Button::new("Load firmware / save…"))
-                    .on_hover_text("Open a .fwsc firmware package or a shared .fm1save setup").clicked() {
-                    ui.picking = Some((FileAction::Load, pick(FileAction::Load, &name)));
-                }
-                let has_firmware = !params.firmware.lock().unwrap().pkg.is_empty();
-                if bar.add_enabled(idle && has_firmware, egui::Button::new("Export save…"))
-                    .on_hover_text("Share the running firmware, patches and settings as a .fm1save file").clicked() {
-                    ui.picking = Some((FileAction::Export, pick(FileAction::Export, &name)));
-                }
-                let chosen = ui.picking.as_ref().and_then(|(action, answer)|
-                    answer.lock().unwrap().take().map(|path| (*action, path)));
-                if let Some((action, path)) = chosen {
-                    ui.picking = None;
-                    if let Some(path) = path {
-                        ui.msg_until = None;
-                        ui.msg = if matches!(action, FileAction::Load) { "Loading save…" } else { "Exporting live flash…" }.into();
-                        ui.job = Some(file_job(action, path, params.clone(), link.clone()));
-                    }
-                }
-                bar.label(egui::RichText::new(if name.is_empty() { "no firmware".into() } else { name }).strong());
-                bar.separator();
-                bar.label("MIDI channel");
-                bar.add(widgets::ParamSlider::for_param(&params.channel, setter).with_width(90.0));
-                bar.label("CPU clock").on_hover_text("The emulated FM-1's clock, 240 MHz as on the chip. Lower it if this computer can't keep up with a heavy firmware (\"frames late\"); raise it if a firmware runs out of time. Changing it restarts the firmware");
-                // a menu in the clocks' order (the parameter's own order keeps v0.2.0's projects)
-                enum_menu(bar, setter, "clock", &params.clock, &Clock::ALL, 90.0, Clock::name);
-                bar.label("Lead").on_hover_text("How far ahead of the host the firmware runs, beyond one host block: a note you play waits this long, plus the host's own buffers, before it sounds. 23 ms is room for any firmware; try less, and go back up if \"frames late\" appear in the status bar. An AU host learns the new latency when the plugin is loaded again");
-                enum_menu(bar, setter, "lead", &params.lead, &Lead::ALL, 70.0, Lead::name);
-                bar.separator();
-                // the recorder: a WAV of the output, as the machine's thread reports it
-                let (file, said) = {
-                    let mut r = params.rec.lock().unwrap();
-                    (r.file.clone(), r.msg.take())
-                };
-                if let Some(said) = said {
-                    ui.msg = said;
-                    ui.msg_until = Some(std::time::Instant::now() + std::time::Duration::from_secs(4));
-                }
-                let rec_label = match &file {
-                    Some((_, frames)) => format!("■ Stop  {}:{:02}", frames / 44_100 / 60, frames / 44_100 % 60),
-                    None => "● Record".into(),
-                };
-                if bar.add_enabled(booted, egui::Button::new(rec_label))
-                    .on_hover_text("Write the FM-1's output to a WAV (44.1 kHz, 16-bit) in your Music folder's fm1-emu").clicked() {
-                    let _ = link.cmds.send(Cmd::Record);
-                }
-                bar.separator();
-                let status = if !ui.msg.is_empty() {
-                    ui.msg.clone()
-                } else if !booted {
-                    "Open a .fwsc firmware or shared .fm1save to start".into()
-                } else if halted {
-                    "The firmware stopped: an instruction the emulator does not know".into()
-                } else {
-                    let late = if late > 0 { format!(", {late} frames late in the last second") } else { String::new() };
-                    if speed > 0.0 { format!("could run {speed:.1}x real time{late}") } else { format!("starting{late}") }
-                };
-                bar.label(status);
-            });
-        });
+        if ui.msg_until.is_some_and(|until| std::time::Instant::now() >= until) {
+            ui.msg.clear(); ui.msg_until = None;
+        }
+        if let Some(result) = ui.job.as_ref().and_then(|job| job.lock().unwrap().take()) {
+            ui.job = None;
+            ui.msg_until = result.as_ref().ok().map(|_| std::time::Instant::now() + std::time::Duration::from_secs(3));
+            ui.msg = match result { Ok(message) => message, Err(error) => error };
+        }
+        let chosen = ui.picking.as_ref().and_then(|(action, answer)| answer.lock().unwrap().take().map(|path| (*action, path)));
+        if let Some((action, path)) = chosen {
+            ui.picking = None;
+            if let Some(path) = path {
+                ui.msg_until = None;
+                ui.msg = if matches!(action, FileAction::Load) { "Loading…" } else { "Exporting live flash…" }.into();
+                ui.job = Some(file_job(action, path, params.clone(), link.clone()));
+            }
+        }
+        let status = if !ui.msg.is_empty() { ui.msg.clone() }
+            else if !booted { "Menu → Load firmware / save… to start".into() }
+            else if halted { "Firmware stopped: unsupported instruction".into() }
+            else if late > 0 { format!("{late} frames late — see Menu → Advanced") }
+            else { String::new() };
 
         egui::CentralPanel::default().frame(egui::Frame::NONE.fill(egui::Color32::from_rgb(0x18, 0x19, 0x1b))).show(ctx, |c| {
             let avail = c.available_rect_before_wrap();
@@ -165,10 +120,14 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
             let resp = c.allocate_rect(rect, egui::Sense::click_and_drag());
             let at = |p: egui::Pos2| ((p.x - rect.min.x) / k, (p.y - rect.min.y) / k);
 
+            let menu_rect = egui::Rect::from_min_size(
+                rect.min + egui::vec2(w as f32 * k - 190.0, if smk { 12.0 } else { 405.0 * k }), egui::vec2(170.0, 36.0));
+            let menu_open = ctx.memory(|m| m.any_popup_open());
+            let on_menu = ctx.input(|i| i.pointer.interact_pos().is_some_and(|p| menu_rect.contains(p)));
             // the pointer
             let (pressed, released, pos, scroll) =
                 ctx.input(|i| (i.pointer.primary_pressed(), i.pointer.primary_released(), i.pointer.interact_pos(), i.raw_scroll_delta.y));
-            if pressed && resp.hovered() {
+            if pressed && resp.hovered() && !menu_open && !on_menu {
                 if let Some(p) = pos {
                     let (x, y) = at(p);
                     let ctl = hit(smk, x, y);
@@ -239,7 +198,7 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
                     }
                 }
             }
-            if scroll != 0.0 && resp.hovered() {
+            if scroll != 0.0 && resp.hovered() && !menu_open && !on_menu {
                 if let Some(p) = pos {
                     let (x, y) = at(p);
                     let h = hit(smk, x, y);
@@ -290,7 +249,7 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
                     leds: &leds,
                     turning: &std::array::from_fn(|i| ui.turning[i]),
                 };
-                panel::draw(&mut ui.buf, &ui.base, &st);
+                panel::draw_with_palette(&mut ui.buf, &ui.base, &st, &color.palette());
             }
             for t in ui.turning.iter_mut() {
                 *t = t.saturating_sub(1);
@@ -304,6 +263,45 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
             }
             if let Some(t) = &ui.tex {
                 c.painter().image(t.id(), rect, egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
+            }
+            c.scope_builder(egui::UiBuilder::new().max_rect(menu_rect), |m| {
+                m.menu_button("☰  Menu", |menu| {
+                    menu.set_min_width(235.0);
+                    menu.strong("F'Em 1");
+                    let name = params.firmware.lock().unwrap().name.clone();
+                    menu.label(if name.is_empty() { "No firmware loaded" } else { &name });
+                    menu.separator();
+                    let idle = ui.picking.is_none() && ui.job.is_none();
+                    if menu.add_enabled(idle, egui::Button::new("Load firmware / save…")).clicked() {
+                        ui.picking = Some((FileAction::Load, pick(FileAction::Load, &name))); menu.close_menu();
+                    }
+                    let has_firmware = !params.firmware.lock().unwrap().pkg.is_empty();
+                    if menu.add_enabled(idle && has_firmware, egui::Button::new("Export save…")).clicked() {
+                        ui.picking = Some((FileAction::Export, pick(FileAction::Export, &name))); menu.close_menu();
+                    }
+                    menu.separator();
+                    if !smk { menu.menu_button("Case color", |colors| {
+                        for choice in CaseColor::ALL {
+                            if colors.selectable_label(choice == color, choice.name()).clicked() {
+                                *params.case_color.lock().unwrap() = choice; colors.close_menu();
+                            }
+                        }
+                    }); }
+                    menu.menu_button("Advanced", |advanced| {
+                        advanced.label("MIDI channel override").on_hover_text("Use channels sent by the DAW unless the firmware expects a different channel.");
+                        advanced.add(widgets::ParamSlider::for_param(&params.channel, setter).with_width(180.0));
+                        advanced.label("Emulated CPU clock").on_hover_text("240 MHz matches the hardware. Lower it to reduce CPU use; raise it for demanding firmware. Changing it restarts the firmware.");
+                        enum_menu(advanced, setter, "clock", &params.clock, &Clock::ALL, 110.0, Clock::name);
+                        advanced.label("Audio safety buffer (Lead)").on_hover_text("Extra time beyond the host block. Less means lower live latency; more protects against dropouts. The plug-in reports the delay to the DAW.");
+                        enum_menu(advanced, setter, "lead", &params.lead, &Lead::ALL, 110.0, Lead::name);
+                        if speed > 0.0 { advanced.label(format!("Emulation headroom: {speed:.1}× real time")); }
+                    });
+                    if !status.is_empty() { menu.separator(); menu.label(&status); }
+                });
+            });
+            if !status.is_empty() {
+                let text_rect = egui::Rect::from_min_max(rect.min + egui::vec2(40.0 * k, 468.0 * k), rect.min + egui::vec2(335.0 * k, 548.0 * k));
+                c.scope_builder(egui::UiBuilder::new().max_rect(text_rect), |m| { m.small(&status); });
             }
         });
         ctx.request_repaint_after(std::time::Duration::from_millis(33));

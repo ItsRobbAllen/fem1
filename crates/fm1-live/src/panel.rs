@@ -23,6 +23,19 @@ const KEY_LINE: u32 = 0x8f7c7e;
 pub const AMBER: u32 = 0xf2a33a;
 pub const GREEN: u32 = 0x62d36e;
 
+/// Case and silicone colors; LCD pixels and LED colors are firmware-owned.
+#[derive(Clone, Copy)]
+pub struct Palette {
+    pub body_top: u32, pub body_bot: u32, pub silk: u32,
+    pub key_top: u32, pub key_bot: u32, pub key_line: u32,
+    pub btn_top: u32, pub btn_bot: u32, pub btn_ink: u32,
+}
+pub const ORIGINAL: Palette = Palette {
+    body_top: BODY_TOP, body_bot: BODY_BOT, silk: SILK,
+    key_top: KEY_TOP, key_bot: KEY_BOT, key_line: KEY_LINE,
+    btn_top: BTN_TOP, btn_bot: BTN_BOT, btn_ink: BTN_INK,
+};
+
 /// What a point on the panel is.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Ctl {
@@ -240,9 +253,13 @@ pub fn text(buf: &mut [u32], cx: f32, y: f32, s: &str, scale: usize, color: u32)
 
 /// The parts that never change: body, trays, bezel, labels.
 pub fn base() -> Vec<u32> {
+    base_with_palette(&ORIGINAL)
+}
+
+pub fn base_with_palette(p: &Palette) -> Vec<u32> {
     canvas(W);
     let mut b = vec![ROOM; W * H];
-    rrect(&mut b, 14.0, 14.0, (W - 28) as f32, (H - 28) as f32, 30.0, BODY_TOP, BODY_BOT);
+    rrect(&mut b, 14.0, 14.0, (W - 28) as f32, (H - 28) as f32, 30.0, p.body_top, p.body_bot);
     // screen bezel
     rrect(&mut b, 352.0, 24.0, 516.0, 516.0, 22.0, 0x0e0e10, 0x0b0b0c);
     // OCT tray, button tray, keyboard tray
@@ -250,9 +267,9 @@ pub fn base() -> Vec<u32> {
     rrect(&mut b, 896.0, 222.0, 360.0, 160.0, 16.0, TRAY, TRAY);
     rrect(&mut b, 34.0, 562.0, 1212.0, 236.0, 26.0, 0x2f2f33, 0x27272a);
     // knob labels
-    text(&mut b, POT.0, POT.1 - POT.2 - 24.0, "MASTER", 2, SILK);
+    text(&mut b, POT.0, POT.1 - POT.2 - 24.0, "MASTER", 2, p.silk);
     for (name, _, cx, cy, r) in ENCS.iter() {
-        text(&mut b, *cx, cy - r - 24.0, name, 2, SILK);
+        text(&mut b, *cx, cy - r - 24.0, name, 2, p.silk);
     }
     // PLAY / REC outlined, as on the panel
     rrect(&mut b, 1134.0, 302.0, 112.0, 72.0, 10.0, 0x3c6b43, 0x3c6b43);
@@ -306,6 +323,10 @@ fn bright(f: f32) -> f32 {
 }
 
 pub fn draw(buf: &mut [u32], base: &[u32], st: &State) {
+    draw_with_palette(buf, base, st, &ORIGINAL)
+}
+
+pub fn draw_with_palette(buf: &mut [u32], base: &[u32], st: &State, p: &Palette) {
     canvas(W);
     buf.copy_from_slice(base);
     // the LCD at 2x
@@ -333,9 +354,9 @@ pub fn draw(buf: &mut [u32], base: &[u32], st: &State) {
         let led = bright(st.leds[id as usize]);
         let tint = if id == 12 { GREEN } else { AMBER };
         let off = if down { 2.0 } else { 0.0 };
-        let (top, bot) = (mix(BTN_TOP, tint, led * 0.85), mix(BTN_BOT, tint, led * 0.7));
+        let (top, bot) = (mix(p.btn_top, tint, led * 0.85), mix(p.btn_bot, tint, led * 0.7));
         rrect(buf, x as f32, y as f32 + off, w as f32, h as f32, 9.0, top, bot);
-        let ink = if led > 0.5 { 0x2a1a03 } else { BTN_INK };
+        let ink = if led > 0.5 { 0x2a1a03 } else { p.btn_ink };
         text(buf, (x + w / 2) as f32, (y + h / 2) as f32 - 7.0 + off, name, 2, ink);
     }
     // note keys: pills with a ridge; pressed and lit keys glow
@@ -344,8 +365,8 @@ pub fn draw(buf: &mut [u32], base: &[u32], st: &State) {
         let led = bright(st.leds[id as usize]);
         let off = if down { 3.0 } else { 0.0 };
         let heat = if down { 0.55 } else { led * 0.6 };
-        rrect(buf, x as f32, y as f32 + off, w as f32, h as f32, w as f32 / 2.0, mix(KEY_TOP, AMBER, heat), mix(KEY_BOT, AMBER, heat * 0.8));
-        let line = mix(KEY_LINE, 0xffe2b0, if down { 1.0 } else { led });
+        rrect(buf, x as f32, y as f32 + off, w as f32, h as f32, w as f32 / 2.0, mix(p.key_top, AMBER, heat), mix(p.key_bot, AMBER, heat * 0.8));
+        let line = mix(p.key_line, 0xffe2b0, if down { 1.0 } else { led });
         rrect(buf, (x + w / 2) as f32 - 2.5, y as f32 + 18.0 + off, 5.0, h as f32 - 36.0, 2.5, line, line);
     }
 }
