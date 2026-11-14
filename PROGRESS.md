@@ -160,3 +160,19 @@ firmware page and project recall. The stock firmware remains embedded.
 Next: close FL Studio, extract the theme-controls package, run its Install.ps1
 with the same installation scope as before, then try the new menu and encoder
 linking. OCT−/HOME emulated LED behavior remains unchanged as documented above.
+
+### 2026-11-14 — realistic panel design preview
+
+- Created a code-rendered SVG concept matching the supplied hardware reference:
+  fine-grain dark shell, rim highlights, smaller ridged knobs, molded rubber
+  controls, recessed trays, glass display and OP1–OP6/PIT/GLO/MONO/POLY legends.
+- The MENU key remains in the case style. LCD content is illustrative, not a
+  live firmware capture. Printed shortcut behavior is not yet verified.
+- Preview only: no plug-in code changes, compilation or installation. Inspected
+  the rendered PNG at target/ui-preview/realistic-panel-preview.png. The editable
+  SVG and generator are in docs/design; render with node preview-panel.cjs --png
+  after installing @resvg/resvg-js under target/ui-preview.
+- Published design checkpoint through GitHub connector; local history retained.
+
+Next: get user feedback on this visual direction before implementing the new
+renderer, updating hit targets, and validating firmware shortcut behavior.
