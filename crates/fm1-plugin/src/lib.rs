@@ -17,6 +17,7 @@ use std::sync::{mpsc, Arc, Mutex};
 mod editor;
 mod appearance;
 mod default_firmware;
+mod controls;
 pub mod engine;
 pub mod savefile;
 #[path = "../../fm1-live/src/wav.rs"]
@@ -56,6 +57,8 @@ pub struct Fm1Params {
     pub flash: Mutex<Vec<Sector>>,
     #[persist = "case-color"]
     pub case_color: Mutex<appearance::CaseColor>,
+    #[nested]
+    pub encoders: controls::Encoders,
 
     /// The MASTER pot.
     #[id = "master"]
@@ -159,6 +162,7 @@ impl Default for Fm1Params {
             firmware: Mutex::new(default_firmware::stock()),
             flash: Mutex::new(Vec::new()),
             case_color: Mutex::new(appearance::CaseColor::default()),
+            encoders: controls::Encoders::default(),
             master: FloatParam::new("Master", 900.0 / 1023.0, FloatRange::Linear { min: 0.0, max: 1.0 })
                 .with_unit(" %")
                 .with_value_to_string(formatters::v2s_f32_percentage(0))

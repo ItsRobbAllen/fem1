@@ -115,3 +115,29 @@ project to check the selected finish and firmware together.
 Next: open a fresh instance in FL Studio and confirm the stock synth appears and
 plays immediately, then reopen a project using a different firmware to verify
 recall in the DAW.
+
+## 2026-11-14 — Theme naming and controller-linkable encoders
+
+- Renamed the visible Case color menu to Theme; kept the saved-state key intact.
+- Confirmed only Master was exposed among panel knobs. Added stable host IDs for
+  Select, Algorithm, Presets, Knobs 1–4, and SMK's eighth encoder. UI gestures
+  notify the host for Last tweaked linking; automation works with the editor shut.
+- Encoder values are virtual positions 0–127 converted to relative hardware
+  movements. Mouse turns remain endless at end stops. Firmware boot and clock
+  reboot establish a baseline, preventing saved encoder positions replaying as
+  new turns. Sound meaning remains firmware/page dependent.
+- Reproduced stock V15 OCT−/HOME illumination changes with no input in a temporary
+  diagnostic test. Raw 30 ms GPIO-duty samples alternated around 0.018 and 0.090;
+  the UI does not invent these changes or send key presses for them. Kept LED
+  output unchanged; physical-device comparison remains unverified. Diagnostic
+  test was removed; its log remains in target/plugin/led-probe.log.
+- Validation: all 24 release tests passed. All 47 VST3 validator checks passed;
+  its Scan Parameters output confirms the newly exposed names and IDs. Host MIDI
+  controller linking still needs user testing in FL Studio.
+- New package: target/plugin/release/fem1-plugin-0.5.1-windows-x86_64-controls.zip.
+  Close FL Studio, extract, and run Install.ps1 -SystemInstall as administrator
+  to replace both files, then rescan with Verify plugins as needed.
+
+Next: move a panel knob, use FL Studio Tools > Last tweaked > Link to controller,
+and move the hardware knob. Check forward/reverse movement on the intended
+firmware page and project recall. The stock firmware remains embedded.

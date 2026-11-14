@@ -205,6 +205,7 @@ pub fn run(
     let mut active_pkg: Option<Arc<Vec<u8>>> = None;
     let mut pending = Vec::new();
     let (mut speed_t, mut speed_ms, mut busy, mut starved0) = (Instant::now(), 0u64, Duration::ZERO, 0u64);
+    let mut encoder_positions = params.encoders.positions();
     while !shared.quit.load(Ordering::Relaxed) {
         while let Ok(c) = cmds.try_recv() {
             let (c, prepared, loaded) = match c {
@@ -219,6 +220,7 @@ pub fn run(
             };
             match c {
                 Cmd::Boot { pkg, sectors } => {
+                    encoder_positions = params.encoders.positions();
                     cancel_snapshots(&mut pending);
                     m = prepared.or_else(|| Machine::boot(&pkg, &sectors, params.clock.value().mhz(), lcd_timed).ok());
                     active_pkg = m.as_ref().map(|_| pkg);
@@ -273,6 +275,7 @@ pub fn run(
                 let sectors = mm.changed_sectors();
                 if let Ok(next) = Machine::boot(pkg, &sectors, mhz, lcd_timed) {
                     m = Some(next);
+                    encoder_positions = params.encoders.positions();
                     pot = u16::MAX;
                     due.clear();
                     let mut v = shared.view.lock().unwrap();
@@ -283,6 +286,12 @@ pub fn run(
             }
         }
         snapshots(&mut pending, m.as_ref(), &params, Instant::now());
+        let changes = crate::controls::deltas(&mut encoder_positions, params.encoders.positions());
+        for (enc, clicks) in changes.into_iter().enumerate() {
+            if clicks != 0 && (enc < 7 || m.as_ref().is_some_and(|m| m.soc.board == Board::Smk37)) {
+                apply(&mut m, Action::Enc { enc: enc as u8, clicks });
+            }
+        }
         // the MASTER pot, a host parameter
         let p = (params.master.value() * 1023.0).round().clamp(0.0, 1023.0) as u16;
         if p != pot && m.as_ref().is_some_and(|m| m.soc.board == Board::Fm1) {

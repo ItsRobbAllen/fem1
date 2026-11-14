@@ -143,6 +143,10 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
                     } else if !smk && ctl == 7 {
                         setter.begin_set_parameter(&params.master);
                     }
+                    if ctl >= 0 && ctl < if smk { 8 } else { 7 } {
+                        let enc = if smk { ctl as usize } else { panel::ENCS[ctl as usize].1 as usize };
+                        setter.begin_set_parameter(params.encoders.get(enc));
+                    }
                     ui.grab = Some(g);
                 }
             }
@@ -171,7 +175,7 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
                     g.acc -= clicks * 12.0;
                     let ctl = g.ctl;
                     if clicks != 0.0 {
-                        turn(ui, &link, smk, ctl, clicks as i32);
+                        turn(ui, &link, &params, setter, smk, ctl, clicks as i32, false);
                     }
                 } else if !smk && g.ctl == 7 {
                     let v = (params.master.value() + (g.last_y - y) * 4.0 / 1023.0).clamp(0.0, 1.0);
@@ -184,6 +188,10 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
             }
             if released {
                 if let Some(g) = ui.grab.take() {
+                    if g.ctl >= 0 && g.ctl < if smk { 8 } else { 7 } {
+                        let enc = if smk { g.ctl as usize } else { panel::ENCS[g.ctl as usize].1 as usize };
+                        setter.end_set_parameter(params.encoders.get(enc));
+                    }
                     if g.held >= 0 {
                         key(ui, &link, g.held, false);
                     }
@@ -214,16 +222,21 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
                         ui.wheel_acc += scroll;
                         while ui.wheel_acc >= 40.0 {
                             ui.wheel_acc -= 40.0;
-                            turn(ui, &link, smk, h, 1);
+                            turn(ui, &link, &params, setter, smk, h, 1, true);
                         }
                         while ui.wheel_acc <= -40.0 {
                             ui.wheel_acc += 40.0;
-                            turn(ui, &link, smk, h, -1);
+                            turn(ui, &link, &params, setter, smk, h, -1, true);
                         }
                     }
                 }
             }
 
+            for i in 0..if smk { 8 } else { 7 } {
+                let enc = if smk { i } else { panel::ENCS[i].1 as usize };
+                let position = params.encoders.get(enc).value() - 64;
+                if ui.enc_clicks[i] != position { ui.enc_clicks[i] = position; ui.turning[i] = 10; }
+            }
             // the panel
             if smk {
                 let a = &ui.analog;
@@ -280,7 +293,7 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
                         ui.picking = Some((FileAction::Export, pick(FileAction::Export, &name))); menu.close_menu();
                     }
                     menu.separator();
-                    if !smk { menu.menu_button("Case color", |colors| {
+                    if !smk { menu.menu_button("Theme", |colors| {
                         for choice in CaseColor::ALL {
                             if colors.selectable_label(choice == color, choice.name()).clicked() {
                                 *params.case_color.lock().unwrap() = choice; colors.close_menu();
@@ -473,11 +486,18 @@ fn key(ui: &mut Ui, link: &Link, id: i32, down: bool) {
     let _ = link.cmds.send(Cmd::Key { id: id as u8, down });
 }
 
-fn turn(ui: &mut Ui, link: &Link, smk: bool, i: i32, clicks: i32) {
-    ui.enc_clicks[i as usize] += clicks;
-    ui.turning[i as usize] = 10;
+fn turn(ui: &mut Ui, link: &Link, params: &Fm1Params, setter: &ParamSetter, smk: bool, i: i32, clicks: i32, gesture: bool) {
     let enc = if smk { i as u8 } else { panel::ENCS[i as usize].1 };
-    let _ = link.cmds.send(Cmd::Enc { enc, clicks });
+    let param = params.encoders.get(enc as usize);
+    let old = param.value();
+    let next = (old + clicks).clamp(0, 127);
+    if gesture { setter.begin_set_parameter(param); }
+    setter.set_parameter(param, next);
+    if gesture { setter.end_set_parameter(param); }
+    // Mouse encoders stay endless even at a host controller's end stops.
+    let remainder = clicks - (next - old);
+    if remainder != 0 { let _ = link.cmds.send(Cmd::Enc { enc, clicks: remainder }); }
+    ui.turning[i as usize] = 10;
 }
 
 fn analog(ui: &mut Ui, link: &Link, i: usize, v: u16) {
