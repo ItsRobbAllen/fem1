@@ -390,6 +390,27 @@ fn rtrb_fill(p: &rtrb::Producer<[f32; 2]>) -> usize {
 #[cfg(test)]
 mod portable_tests {
     use super::*;
+    #[test]
+    fn bundled_stock_boots_draws_and_plays_a_midi_note() {
+        let fw = crate::default_firmware::stock();
+        let mut m = Machine::boot(&fw.pkg, &[], 240, false).unwrap();
+        let start = Instant::now();
+        let mut sent = false;
+        let mut sounded = false;
+        while m.soc.periph.ms() < 4000 && !m.halted && start.elapsed() < Duration::from_secs(30) {
+            if !sent && m.soc.periph.ms() >= 3000 {
+                for b in [0x91, 60, 100] { m.soc.periph.apply(&Action::Midi { b }); }
+                sent = true;
+            }
+            m.run(20_000);
+            if sent { sounded |= m.soc.periph.audio.iter().any(|&s| (s as i32).abs() > 100); }
+            m.soc.periph.audio.clear();
+        }
+        assert!(!m.halted, "stock firmware halted");
+        assert!(m.soc.periph.ms() >= 4000, "stock boot timed out");
+        assert!(m.soc.lcd.fb.iter().filter(|&&p| p != 0).count() > 1000);
+        assert!(sounded, "stock firmware should sound on MIDI channel 2");
+    }
     fn machine() -> Machine {
         let soc = Soc::new(RAM_SIZE, vec![0x55; 0x80000]);
         let flash0 = soc.flash.mem.clone();

@@ -16,6 +16,7 @@ use std::sync::{mpsc, Arc, Mutex};
 
 mod editor;
 mod appearance;
+mod default_firmware;
 pub mod engine;
 pub mod savefile;
 #[path = "../../fm1-live/src/wav.rs"]
@@ -155,14 +156,14 @@ impl Default for Fm1Params {
     fn default() -> Self {
         Self {
             editor_state: EguiState::from_size(960, 660),
-            firmware: Mutex::new(Firmware::default()),
+            firmware: Mutex::new(default_firmware::stock()),
             flash: Mutex::new(Vec::new()),
             case_color: Mutex::new(appearance::CaseColor::default()),
             master: FloatParam::new("Master", 900.0 / 1023.0, FloatRange::Linear { min: 0.0, max: 1.0 })
                 .with_unit(" %")
                 .with_value_to_string(formatters::v2s_f32_percentage(0))
                 .with_string_to_value(formatters::s2v_f32_percentage()),
-            channel: IntParam::new("MIDI channel", 0, IntRange::Linear { min: 0, max: 16 })
+            channel: IntParam::new("MIDI channel", 2, IntRange::Linear { min: 0, max: 16 })
                 .with_value_to_string(Arc::new(|v| if v == 0 { "as sent".into() } else { v.to_string() })),
             clock: EnumParam::new("CPU clock", Clock::Mhz240).non_automatable(),
             lead: EnumParam::new("Lead", Lead::Safe).non_automatable(),
@@ -313,6 +314,9 @@ impl Plugin for Fm1 {
 
     fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
         let link = self.start();
+        let fw = self.params.firmware.lock().unwrap().clone();
+        let sectors = self.params.flash.lock().unwrap().clone();
+        link.boot(&fw, &sectors);
         editor::create(self.params.clone(), link)
     }
 

@@ -14,6 +14,8 @@ name=fem1-plugin-$version-macos-arm64
 rel=$out/release
 rm -rf "$rel"
 mkdir -p "$rel/$name"
+mkdir -p "$rel/$name/licenses/mvave"
+cp crates/fm1-plugin/resources/mvave/{NOTICE.md,THIRD_PARTY.md,LICENSE-2.0.txt} "$rel/$name/licenses/mvave/"
 for b in FEm1.component FEm1.vst3 FEm1.clap; do
   [ -d "$out/$b" ] || { echo "no $out/$b: run tools/build_plugin.sh first" >&2; exit 1; }
 done

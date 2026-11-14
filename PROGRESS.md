@@ -87,3 +87,31 @@ public release. Broader synth/groovebox/sampler qualification remains pending.
 
 Next: verify menu operation, all five finishes, and reopen a saved FL Studio
 project to check the selected finish and firmware together.
+
+## 2026-11-14 — Embedded stock firmware
+
+- User confirmed the menu/colors update worked after installing both companion
+  files through the installer. Copying only the VST3 had loaded the old CLAP UI.
+- Verified M-VAVE's explicit Apache-2.0 grant for the unmodified V15 recovery
+  image at m-vave/fm1_open commit `4c7496daac04a95ff10d1afdcc8f9ead2dbabc41`.
+  Bundled that exact 699,956-byte image, original notices, and Apache license in
+  resources/mvave. This grant is specific to V15, not the separate V16 download.
+- New instances use the embedded image without disk reads or network requests;
+  instance firmware copies share immutable package bytes. Saved project firmware
+  still overrides the default. The editor also boots its loaded firmware when a
+  host displays the UI without activating audio.
+- New-instance MIDI override defaults to channel 2 for stock V15 to play from
+  ordinary DAW MIDI. Saved parameter values keep their own routing. Other
+  firmware can be loaded through Menu as before.
+- Validation: 22 release tests passed; an additional embedded-stock boot/screen/
+  MIDI-audio test passed. Pinned image hash/parser and project firmware override
+  are covered. The rebuilt VST3 passed all 47 validator checks using an isolated
+  CLAP filename to avoid the previously installed version.
+- Updated package includes notices under licenses/mvave; zip contents verified.
+  `target/plugin/release/fem1-plugin-0.5.1-windows-x86_64-bundled.zip`.
+  Close FL Studio and run its extracted Install.ps1 -SystemInstall to update both
+  files. No active FL Studio project or installed binary was modified this turn.
+
+Next: open a fresh instance in FL Studio and confirm the stock synth appears and
+plays immediately, then reopen a project using a different firmware to verify
+recall in the DAW.

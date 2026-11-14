@@ -13,7 +13,8 @@ CMake, and Git available. It installs both files under your user profile:
 - `%LOCALAPPDATA%\Programs\Common\VST3\FEm1.vst3` (the entire bundle folder)
 - `%LOCALAPPDATA%\Programs\Common\CLAP\FEm1.clap`
 
-Keep both. The VST3 wrapper loads the CLAP engine at runtime. The original
+Keep both. The VST3 wrapper loads the CLAP engine and interface at runtime;
+updating only the VST3 can leave the old interface in place. The original
 `FM-1` plug-in uses different filenames and an independent identity.
 
 For FL Studio, run `tools\build_plugin.ps1 -SystemInstall` from an administrator
@@ -28,6 +29,20 @@ is needed. The Windows zip also includes `Install.ps1`; extract the zip and run
 
 ## FL Studio acceptance checklist
 
+### Embedded default firmware
+
+New instances start with **M-VAVE stock V15**, embedded in the plug-in: no
+download, internet access, or separate firmware file is required. Incoming DAW
+MIDI is remapped to channel 2 by default because that is the stock firmware's
+receive channel. Saved projects restore their own firmware and parameter values.
+Use **Menu > Load firmware / save…** to choose another firmware, and adjust
+**Advanced > MIDI channel override** if its routing differs.
+
+The specific unmodified V15 recovery image is licensed by M-VAVE under Apache
+2.0. Source provenance and original notices are included under `licenses/mvave`
+in the package and `crates/fm1-plugin/resources/mvave` in this repository. This
+does not establish redistribution rights for other stock firmware versions.
+
 ### Panel menu and colors
 
 The plug-in's toolbar is now a **Menu** dropdown on the instrument panel. It holds
@@ -40,7 +55,7 @@ apply to the FM-1 panel; SMK-37 firmware retains its own keyboard panel.
 The plug-in WAV recorder has been removed; record and render using the DAW.
 The panel's hardware **REC** key still goes to the firmware's sequencer.
 
-**Menu > Advanced** retains MIDI channel override (default: as sent by the DAW),
+**Menu > Advanced** retains MIDI channel override (new-instance default: 2),
 emulated CPU clock (default: 240 MHz), and audio safety buffer / Lead (default:
 23 ms). MIDI routing belongs in the DAW normally, but some firmware expects a
 specific channel. CPU clock changes the emulated hardware's speed and restarts

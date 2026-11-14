@@ -6,6 +6,9 @@ Eriksson**. This fork uses its own plug-in identity and builds `FEm1.vst3` and
 
 Start with the [Windows / FL Studio build and test guide](docs/FEM1-FL-STUDIO.md).
 Development status and validation are tracked in [PROGRESS.md](PROGRESS.md).
+New instances include M-VAVE's Apache-2.0-licensed stock V15 recovery firmware,
+so they can boot offline without a separate firmware download. Its original
+notices and provenance are in [resources/mvave](crates/fm1-plugin/resources/mvave/NOTICE.md).
 The upstream project documentation follows; references below to the original
 FM-1 plug-in and its releases describe upstream builds.
 

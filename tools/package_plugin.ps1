@@ -17,6 +17,10 @@ foreach ($b in 'FEm1.vst3', 'FEm1.clap') {
     Copy-Item "$out\$b" "$rel\$name\$b" -Recurse
 }
 Copy-Item -LiteralPath 'tools\install_plugin.ps1' -Destination "$rel\$name\Install.ps1"
+New-Item -ItemType Directory -Force "$rel\$name\licenses\mvave" | Out-Null
+foreach ($notice in 'NOTICE.md', 'THIRD_PARTY.md', 'LICENSE-2.0.txt') {
+    Copy-Item -LiteralPath "crates\fm1-plugin\resources\mvave\$notice" -Destination "$rel\$name\licenses\mvave\$notice"
+}
 
 $install = @"
 F'Em 1 plugin ${version}: the M-VAVE FM-1 emulator as an instrument (VST3, CLAP)
@@ -38,7 +42,8 @@ This installs the existing build without requiring build tools.
 2. This build is not code-signed. Windows may warn when you open the zip; the plug-ins
    themselves load without a prompt.
 3. Restart your DAW, or rescan its plug-ins. Add "F'Em 1" (by ItsRobbAllen) as an instrument on a track.
-4. In the plug-in's window, click "Load firmware / save..." and pick a .fwsc package: a community
+4. New instances start with embedded M-VAVE stock V15; no firmware download is needed.
+   To change it, use Menu > Load firmware / save... and pick a .fwsc package: a community
    firmware (the list, with each author's link: https://joakimeriksson.github.io/fm1-emu/)
    or M-VAVE's own. Play it from MIDI or with the mouse on its panel.
 
