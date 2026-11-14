@@ -296,9 +296,9 @@ fn midi_len(status: u8) -> u8 {
 }
 
 impl Plugin for Fm1 {
-    const NAME: &'static str = "FM-1";
-    const VENDOR: &'static str = "fm1-emu";
-    const URL: &'static str = "https://github.com/joakimeriksson/fm1-emu";
+    const NAME: &'static str = "F'Em 1";
+    const VENDOR: &'static str = "ItsRobbAllen";
+    const URL: &'static str = "https://github.com/ItsRobbAllen/fem1";
     const EMAIL: &'static str = "";
     const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
@@ -403,7 +403,7 @@ impl Plugin for Fm1 {
 }
 
 impl ClapPlugin for Fm1 {
-    const CLAP_ID: &'static str = "io.github.joakimeriksson.fm1-emu";
+    const CLAP_ID: &'static str = "io.github.itsrobballen.fem1";
     const CLAP_DESCRIPTION: Option<&'static str> = Some("The M-VAVE FM-1 emulated: its community firmwares as an instrument");
     const CLAP_MANUAL_URL: Option<&'static str> = Some(Self::URL);
     const CLAP_SUPPORT_URL: Option<&'static str> = None;

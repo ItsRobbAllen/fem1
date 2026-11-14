@@ -1,4 +1,11 @@
-# FM-1 as a plugin (AU, VST3, CLAP)
+# F'Em 1 as a plugin (AU, VST3, CLAP)
+
+This fork appears as **F'Em 1** by **ItsRobbAllen**, with CLAP ID
+`io.github.itsrobballen.fem1` and artifact filenames `FEm1.*`.
+For this fork's build, installation, and FL Studio checks, use
+[the F'Em 1 guide](../../docs/FEM1-FL-STUDIO.md). The upstream notes below
+describe the shared engine; their original `FM-1.*` filenames and validation
+results refer to upstream builds, not a tested F'Em 1 release.
 
 The emulator as an instrument in a DAW: load a firmware package (`.fwsc`) or a shared setup (`.fm1save`) in the plugin’s
 window, play it from the host's MIDI, and play its panel with the mouse. It's the same panel as

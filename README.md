@@ -1,4 +1,15 @@
-# FM-1 emulator
+# F'Em 1
+
+F'Em 1 is a firmware-loading virtual instrument based on **fm1-emu by Joakim
+Eriksson**. This fork uses its own plug-in identity and builds `FEm1.vst3` and
+`FEm1.clap`; the instrument appears as **F'Em 1** by **ItsRobbAllen**.
+
+Start with the [Windows / FL Studio build and test guide](docs/FEM1-FL-STUDIO.md).
+Development status and validation are tracked in [PROGRESS.md](PROGRESS.md).
+The upstream project documentation follows; references below to the original
+FM-1 plug-in and its releases describe upstream builds.
+
+## FM-1 emulator (upstream)
 
 The **M-VAVE FM-1** is a pocket FM synthesizer, and a small community writes its own firmwares
 for it: drum machines, grooveboxes, ambient generators, a chord harp. This project emulates the
