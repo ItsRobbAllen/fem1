@@ -121,7 +121,7 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
             let at = |p: egui::Pos2| ((p.x - rect.min.x) / k, (p.y - rect.min.y) / k);
 
             let menu_rect = egui::Rect::from_min_size(
-                rect.min + egui::vec2(w as f32 * k - 190.0, if smk { 12.0 } else { 405.0 * k }), egui::vec2(170.0, 36.0));
+                rect.min + egui::vec2((w as f32 - 164.0) * k, if smk { 12.0 * k } else { 405.0 * k }), egui::vec2(136.0 * k, 44.0 * k));
             let menu_open = ctx.memory(|m| m.any_popup_open());
             let on_menu = ctx.input(|i| i.pointer.interact_pos().is_some_and(|p| menu_rect.contains(p)));
             // the pointer
@@ -264,6 +264,11 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
                 };
                 panel::draw_with_palette(&mut ui.buf, &ui.base, &st, &color.palette());
             }
+            // Render in the same pixel font, material and scale as the panel keys.
+            // The transparent egui button below supplies popup/focus behavior only.
+            crate::panel_menu::draw(&mut ui.buf, w, if smk { 12.0 } else { 405.0 },
+                if smk { panel::ORIGINAL } else { color.palette() },
+                menu_open || (on_menu && ctx.input(|i| i.pointer.primary_down())), on_menu);
             for t in ui.turning.iter_mut() {
                 *t = t.saturating_sub(1);
             }
@@ -278,7 +283,8 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
                 c.painter().image(t.id(), rect, egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
             }
             c.scope_builder(egui::UiBuilder::new().max_rect(menu_rect), |m| {
-                m.menu_button("☰  Menu", |menu| {
+                let button = egui::Button::new("").frame(false).min_size(menu_rect.size());
+                egui::menu::menu_custom_button(m, button, |menu| {
                     menu.set_min_width(235.0);
                     menu.strong("F'Em 1");
                     let name = params.firmware.lock().unwrap().name.clone();

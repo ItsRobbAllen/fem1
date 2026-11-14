@@ -16,6 +16,7 @@ use std::sync::{mpsc, Arc, Mutex};
 
 mod editor;
 mod appearance;
+mod panel_menu;
 mod default_firmware;
 mod controls;
 pub mod engine;

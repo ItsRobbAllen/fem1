@@ -141,3 +141,22 @@ recall in the DAW.
 Next: move a panel knob, use FL Studio Tools > Last tweaked > Link to controller,
 and move the hardware knob. Check forward/reverse movement on the intended
 firmware page and project recall. The stock firmware remains embedded.
+
+### 2026-11-14 — case-matched menu button
+
+- Replaced the generic hamburger/menu widget with a panel-rendered MENU key:
+  matching pixel lettering, rounded cap, recessed surround, shadow, down arrow,
+  and theme colors. Added hover/pressed feedback and proportional scaling.
+- Kept the existing dropdown and its actions; the transparent interaction layer
+  cannot send firmware key presses. Reviewed rendered previews of all five themes
+  against the adjacent physical keys (target/plugin/menu-preview.png).
+- Validation: 24 release tests and all 47 VST3 validator checks passed; rebuilt
+  both plug-in files. Packaged theme-controls.zip with the embedded stock firmware
+  and encoder linking changes. FL Studio controller linking needs user testing.
+- Checkpoint publishing uses the GitHub connector because saved local Git
+  credentials were rejected; local milestone history is retained before fetching
+  and tracking the equivalent remote commits.
+
+Next: close FL Studio, extract the theme-controls package, run its Install.ps1
+with the same installation scope as before, then try the new menu and encoder
+linking. OCT−/HOME emulated LED behavior remains unchanged as documented above.
