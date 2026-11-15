@@ -293,3 +293,23 @@ Next: close FL Studio and install both files using the packaged installer.
 Check readable notifications on a failed import and dismiss them. Compare output
 at the +12 dB default; try +18..+24 dB for quiet FM-106 patches, then save the
 project. Reduce Output if peak protection audibly changes a loud patch's dynamics.
+
+### 2026-11-14 — notifications inside the LCD bezel
+
+- Replaced the layout-reserving bottom panel with an overlay in the unused
+  black glass below the FM-1 framebuffer (420,395 to 710,429 in panel pixels).
+  Appearing/dismissing messages cannot change available panel space or scale.
+- High-contrast 14-point summaries and an × dismiss control fit the bezel. Full
+  text is available on hover and in Menu. Long text truncates within the bezel;
+  it never covers firmware pixels or controls. Message clicks/scroll are excluded
+  from raw panel input. SMK uses an overlay below its existing LCD region.
+- Validation: release build succeeded and all 47 VST3 validator checks passed.
+  This is a UI-only change; output processing and the prior 32 passing automated
+  tests are unchanged. No additional unit tests were introduced for the layout.
+- Packaged target/plugin/release/fem1-plugin-0.5.1-windows-x86_64-lcd-messages.zip
+  with the updated guide. Output gain changes remain included. Published via
+  GitHub Git-object tools, preserving local checkpoint history on a backup branch.
+
+Next: close FL Studio, install both files using the package installer, and check
+that an import error appears below the LCD while the case stays the same size.
+Hover the summary for details and click × to dismiss it.

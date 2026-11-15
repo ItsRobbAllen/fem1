@@ -142,11 +142,12 @@ recovery. Below that threshold, output remains linear. Very loud boosted patches
 can engage protection; lower Output level if that changes their dynamics.
 This adds no lookahead or reported latency.
 
-Messages appear in a dedicated panel below the instrument with fixed-size
-15–16 point text, contrasting colors, wrapping and a Dismiss button. File errors
-remain until dismissed or another action replaces them; successful file actions
-clear after three seconds. Details also remain available in Menu. Messages no
-longer overlap the case or the OCT buttons.
+Messages appear in the unused black glass below the LCD's firmware picture,
+with contrasting 14-point text and an × dismiss control. A brief summary fits
+the bezel; hover it or open Menu to read the full details. File errors remain
+until dismissed or another action replaces them; successful file actions clear
+after three seconds. Showing or hiding a message never resizes the instrument
+or covers its firmware display and controls.
 
 ### Playback checklist
 

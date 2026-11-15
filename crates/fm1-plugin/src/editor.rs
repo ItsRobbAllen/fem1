@@ -125,36 +125,6 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
             else if late > 0 { format!("{late} frames late — see Menu → Advanced") }
             else { String::new() };
 
-        // A dedicated strip outside the case remains legible in every theme and
-        // never overlaps keys or shrinks text along with the panel artwork.
-        if !status.is_empty() && status != ui.dismissed_status {
-            let error = (!ui.msg.is_empty() && ui.msg_error) || halted;
-            let warning = !error && late > 0 && ui.msg.is_empty();
-            let accent = if error { egui::Color32::from_rgb(255,153,145) }
-                else if warning { egui::Color32::from_rgb(255,207,117) }
-                else { egui::Color32::from_rgb(155,210,243) };
-            egui::TopBottomPanel::bottom("notifications").resizable(false)
-                .frame(egui::Frame::NONE.fill(egui::Color32::from_rgb(29,33,39))
-                    .stroke(egui::Stroke::new(1.0,accent)).inner_margin(egui::Margin::symmetric(14,10)))
-                .show(ctx, |bar| {
-                    bar.horizontal_top(|row| {
-                        row.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |row| {
-                            if row.button(egui::RichText::new("Dismiss").size(15.0)).clicked() {
-                                ui.dismissed_status = status.clone();
-                            }
-                            let width = row.available_width();
-                            row.vertical(|body| {
-                                body.set_width(width);
-                                let heading = if error { "Couldn't complete that action" }
-                                    else if warning { "Audio performance" } else { "Instrument status" };
-                                body.label(egui::RichText::new(heading).size(16.0).strong().color(accent));
-                                body.add(egui::Label::new(egui::RichText::new(&status).size(15.0)
-                                    .color(egui::Color32::from_rgb(245,247,250))).wrap());
-                            });
-                        });
-                    });
-                });
-        }
         egui::CentralPanel::default().frame(egui::Frame::NONE.fill(egui::Color32::from_rgb(0x18, 0x19, 0x1b))).show(ctx, |c| {
             let avail = c.available_rect_before_wrap();
             let k = (avail.width() / w as f32).min(avail.height() / h as f32);
@@ -167,10 +137,15 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
                 rect.min + egui::vec2(mx as f32*k,my as f32*k),egui::vec2(mw as f32*k,mh as f32*k));
             let menu_open = ctx.memory(|m| m.any_popup_open());
             let on_menu = ctx.input(|i| i.pointer.interact_pos().is_some_and(|p| menu_rect.contains(p)));
+            let (nx,ny,nw,nh) = if smk { (262,542,480,34) } else { crate::realistic_panel::NOTICE };
+            let notice_rect = egui::Rect::from_min_size(rect.min + egui::vec2(nx as f32*k,ny as f32*k),
+                egui::vec2(nw as f32*k,nh as f32*k));
+            let show_notice = !status.is_empty() && status != ui.dismissed_status;
+            let on_notice = show_notice && ctx.input(|i| i.pointer.interact_pos().is_some_and(|p| notice_rect.contains(p)));
             // the pointer
             let (pressed, released, pos, scroll) =
                 ctx.input(|i| (i.pointer.primary_pressed(), i.pointer.primary_released(), i.pointer.interact_pos(), i.raw_scroll_delta.y));
-            if pressed && resp.hovered() && !menu_open && !on_menu {
+            if pressed && resp.hovered() && !menu_open && !on_menu && !on_notice {
                 if let Some(p) = pos {
                     let (x, y) = at(p);
                     let ctl = hit(smk, x, y);
@@ -249,7 +224,7 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
                     }
                 }
             }
-            if scroll != 0.0 && resp.hovered() && !menu_open && !on_menu {
+            if scroll != 0.0 && resp.hovered() && !menu_open && !on_menu && !on_notice {
                 if let Some(p) = pos {
                     let (x, y) = at(p);
                     let h = hit(smk, x, y);
@@ -324,6 +299,19 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
             }
             if let Some(t) = &ui.tex {
                 c.painter().image(t.id(), rect, egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
+            }
+            if show_notice {
+                let error = (!ui.msg.is_empty() && ui.msg_error) || halted;
+                let warning = !error && late > 0 && ui.msg.is_empty();
+                let summary = if ui.msg_error && status.starts_with("Load:") { "Firmware load failed" }
+                    else if ui.msg_error && status.starts_with("Export:") { "Save/export failed" }
+                    else if status.starts_with("Firmware stopped") { "Firmware stopped" }
+                    else if status.starts_with("Turn the relative MIDI") { "MIDI learn: turn a knob" }
+                    else if status.starts_with("Menu →") { "Load firmware from Menu" }
+                    else if warning { "Audio underruns · see Menu" } else { &status };
+                if bezel_notice(c,notice_rect,summary,&status,error,warning) {
+                    ui.dismissed_status = status.clone();
+                }
             }
             c.scope_builder(egui::UiBuilder::new().max_rect(menu_rect), |m| {
                 let button = egui::Button::new("").frame(false).min_size(menu_rect.size());
@@ -406,6 +394,26 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
 /// and that window takes no clicks until it closes; without one it opened behind the host. The
 /// answer lands in the returned slot (a path, or None if cancelled).
 type Answer = Arc<std::sync::Mutex<Option<Option<std::path::PathBuf>>>>;
+
+/// Overlay only: it cannot reserve layout space or change the instrument scale.
+fn bezel_notice(ui: &mut egui::Ui, rect: egui::Rect, summary: &str, detail: &str, error: bool, warning: bool) -> bool {
+    let accent = if error { egui::Color32::from_rgb(255,153,145) }
+        else if warning { egui::Color32::from_rgb(255,207,117) }
+        else { egui::Color32::from_rgb(180,223,249) };
+    ui.painter().rect_filled(rect,4.0,egui::Color32::from_rgb(8,10,12));
+    let dismiss = egui::Rect::from_min_max(egui::pos2(rect.max.x-22.0,rect.min.y),rect.max);
+    let close = ui.interact(dismiss,ui.id().with("dismiss-notification"),egui::Sense::click())
+        .on_hover_text("Dismiss message");
+    ui.painter().text(dismiss.center(),egui::Align2::CENTER_CENTER,"×",egui::FontId::proportional(16.0),
+        if close.hovered() { egui::Color32::WHITE } else { egui::Color32::from_gray(180) });
+    let text_rect = egui::Rect::from_min_max(rect.min+egui::vec2(6.0,0.0),egui::pos2(dismiss.min.x-3.0,rect.max.y));
+    ui.scope_builder(egui::UiBuilder::new().max_rect(text_rect), |text| {
+        text.set_clip_rect(text_rect);
+        text.add_sized(text_rect.size(),egui::Label::new(egui::RichText::new(summary).size(14.0).color(accent))
+            .truncate()).on_hover_text(detail);
+    });
+    close.clicked()
+}
 /// A menu for an enum parameter, in the order given (not the enum's own, which the saved index
 /// keeps), setting it through the host.
 fn enum_menu<T: Enum + PartialEq + Copy + 'static>(

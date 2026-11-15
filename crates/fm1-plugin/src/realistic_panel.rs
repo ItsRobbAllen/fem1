@@ -3,6 +3,8 @@ use crate::{appearance::CaseColor, panel};
 pub const W: usize = 1500;
 pub const H: usize = 920;
 pub const MENU: (usize, usize, usize, usize) = (1264, 489, 121, 42);
+/// Unused black glass beneath the live framebuffer; never overlaps firmware pixels.
+pub const NOTICE: (usize, usize, usize, usize) = (420, 395, 290, 34);
 pub const ENCS: [(f32, f32); 7] = [
     (281., 155.),
     (126., 312.),
