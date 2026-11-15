@@ -1,0 +1,17 @@
+diff --git a/src/detail/vst3/process.cpp b/src/detail/vst3/process.cpp
+index 68f1ba0..b85472f 100644
+--- a/src/detail/vst3/process.cpp
++++ b/src/detail/vst3/process.cpp
+@@ -300,8 +300,11 @@ void ProcessAdapter::process(Steinberg::Vst::ProcessData &data)
+ 
+           Vst::ParamValue value;
+           int32 offset;
+-          if (k->getPoint(nums - 1, offset, value) == kResultOk)
++          // Relative CCs are movement events: every point matters, even repeated values.
++          for (int32 point = 0; point < nums; ++point)
+           {
++            if (k->getPoint(point, offset, value) != kResultOk)
++              continue;
+             // create MIDI event
+             clap_multi_event_t n;
+             n.param.header.type = CLAP_EVENT_MIDI;

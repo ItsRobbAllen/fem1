@@ -81,6 +81,7 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
             (v.lcd.clone(), v.leds, v.pads, v.board, v.booted, v.halted, v.speed, v.late)
         };
         let color = *params.case_color.lock().unwrap();
+        let midi_encoders = params.encoder_midi.lock().unwrap().clone();
         if board != ui.board || color != ui.color || ui.base.is_empty() {
             ui.color = color;
             ui.board = board;
@@ -108,6 +109,9 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
             }
         }
         let status = if !ui.msg.is_empty() { ui.msg.clone() }
+            else if let Some(i) = midi_encoders.learning.filter(|&i|i<8) {
+                format!("Turn the relative MIDI encoder for {}…", crate::controls::ENCODER_NAMES[i])
+            }
             else if !booted { "Menu → Load firmware / save… to start".into() }
             else if halted { "Firmware stopped: unsupported instruction".into() }
             else if late > 0 { format!("{late} frames late — see Menu → Advanced") }
@@ -235,7 +239,7 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
 
             for i in 0..if smk { 8 } else { 7 } {
                 let enc = if smk { i } else { panel::ENCS[i].1 as usize };
-                let position = params.encoders.get(enc).value() - 64;
+                let position = (params.encoders.get(enc).value() - 64).wrapping_add(midi_encoders.turns[enc]);
                 if ui.enc_clicks[i] != position { ui.enc_clicks[i] = position; ui.turning[i] = 10; }
             }
             // the panel
@@ -307,6 +311,27 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
                             }
                         }
                     }); }
+                    menu.menu_button("MIDI encoders", |midi| {
+                        midi.set_min_width(360.0);
+                        midi.label("Endless / Relative · FLkey 2");
+                        midi.small("Set the hardware encoder to Relative (63/65). Remove its FL Studio parameter link and send its MIDI CC to this instrument.");
+                        midi.separator();
+                        for (i,name) in crate::controls::ENCODER_NAMES.iter().enumerate().take(if smk {8}else{7}) {
+                            midi.horizontal(|row| {
+                                row.label(*name);
+                                if let Some(b)=midi_encoders.bindings[i] {row.small(format!("CC {} · Ch {}",b.cc,b.channel+1));}
+                                if row.button("Learn").clicked() {
+                                    params.encoder_midi.lock().unwrap().learning=Some(i);row.close_menu();
+                                }
+                                if midi_encoders.bindings[i].is_some() && row.small_button("Clear").clicked() {
+                                    params.encoder_midi.lock().unwrap().bindings[i]=None;
+                                }
+                            });
+                        }
+                        if midi_encoders.learning.is_some() && midi.button("Cancel learning").clicked() {
+                            params.encoder_midi.lock().unwrap().learning=None;
+                        }
+                    });
                     menu.menu_button("Advanced", |advanced| {
                         advanced.label("MIDI channel override").on_hover_text("Use channels sent by the DAW unless the firmware expects a different channel.");
                         advanced.add(widgets::ParamSlider::for_param(&params.channel, setter).with_width(180.0));

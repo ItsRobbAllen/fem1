@@ -33,6 +33,22 @@ FetchContent_Declare(clap-wrapper
         GIT_TAG v0.16.0)
 FetchContent_MakeAvailable(clap-wrapper)
 
+# v0.16.0 coalesces each MIDI CC queue to its final point. Relative encoder
+# messages are steps, so preserve all points (ordinary automation is unchanged).
+find_package(Git REQUIRED)
+set(relative_midi_patch "${CMAKE_CURRENT_SOURCE_DIR}/patches/relative-midi.patch")
+execute_process(COMMAND "${GIT_EXECUTABLE}" apply --reverse --check "${relative_midi_patch}"
+        WORKING_DIRECTORY "${clap-wrapper_SOURCE_DIR}"
+        RESULT_VARIABLE midi_patch_already_applied OUTPUT_QUIET ERROR_QUIET)
+if (NOT midi_patch_already_applied EQUAL 0)
+    execute_process(COMMAND "${GIT_EXECUTABLE}" apply "${relative_midi_patch}"
+            WORKING_DIRECTORY "${clap-wrapper_SOURCE_DIR}"
+            RESULT_VARIABLE midi_patch_result ERROR_VARIABLE midi_patch_error)
+    if (NOT midi_patch_result EQUAL 0)
+        message(FATAL_ERROR "Cannot apply relative MIDI fix: ${midi_patch_error}")
+    endif ()
+endif ()
+
 # An instrument ('aumu'); the codes name it to AU hosts: manufacturer RbAl, subtype Fem1.
 if (APPLE)
     add_library(fm1_auv2 MODULE)

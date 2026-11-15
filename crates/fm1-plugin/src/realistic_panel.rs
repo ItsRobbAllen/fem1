@@ -77,22 +77,26 @@ pub fn base(color: CaseColor) -> Vec<u32> {
         .map(|p| (p[0] as u32) << 16 | (p[1] as u32) << 8 | p[2] as u32)
         .collect()
 }
-fn knob(buf: &mut [u32], base: &[u32], cx: f32, cy: f32, angle: f32, glow: bool) {
+fn knob(buf: &mut [u32], _base: &[u32], cx: f32, cy: f32, angle: f32, glow: bool) {
+    // The embedded cap has no pointer. Lighting and knurling stay fixed;
+    // only this antialiased radial indicator follows the encoder position.
+    panel::canvas(W);
     let (sin, cos) = angle.sin_cos();
-    for dy in -33..=33 {
-        for dx in -33..=33 {
-            let radius = (dx * dx + dy * dy) as f32;
-            if radius > 33. * 33. {
-                continue;
+    for dy in -30..=30 {
+        for dx in -30..=30 {
+            let along = (dx as f32 * sin - dy as f32 * cos).clamp(20., 27.);
+            let distance =
+                ((dx as f32 - along * sin).powi(2) + (dy as f32 + along * cos).powi(2)).sqrt();
+            let alpha = (2.5 - distance).clamp(0., 1.);
+            if alpha > 0. {
+                panel::put(
+                    buf,
+                    cx as i32 + dx,
+                    cy as i32 + dy,
+                    if glow { 0xffffff } else { 0xeeeeea },
+                    alpha,
+                );
             }
-            let sx = (cx + dx as f32 * cos + dy as f32 * sin).round() as usize;
-            let sy = (cy - dx as f32 * sin + dy as f32 * cos).round() as usize;
-            let at = (cy as i32 + dy) as usize * W + (cx as i32 + dx) as usize;
-            buf[at] = if glow {
-                panel::mix(base[sy * W + sx], 0xffffff, 0.05)
-            } else {
-                base[sy * W + sx]
-            };
         }
     }
 }
@@ -145,17 +149,16 @@ pub fn draw(buf: &mut [u32], base: &[u32], st: &panel::State, menu_down: bool, m
             base,
             *x,
             *y,
-            (st.enc_clicks[i] as f32 * 18.).to_radians(),
+            ((st.enc_clicks[i] % 20) as f32 * 18.).to_radians(),
             st.turning[i] > 0,
         );
     }
-    // Artwork's master pointer is at -15 degrees.
     knob(
         buf,
         base,
         126.,
         155.,
-        (-120. + 270. * st.pot as f32 / 1023.).to_radians(),
+        (-135. + 270. * st.pot as f32 / 1023.).to_radians(),
         st.turning[7] > 0,
     );
     for (id, x, y, w, h) in buttons() {
@@ -194,6 +197,36 @@ pub fn draw(buf: &mut [u32], base: &[u32], st: &panel::State, menu_down: bool, m
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn rotation_preserves_the_cap_highlights_knurling_and_shadows() {
+        let base = base(CaseColor::Black);
+        let mut first = base.clone();
+        let mut second = base.clone();
+        knob(&mut first, &base, 281., 155., 0., false);
+        knob(
+            &mut second,
+            &base,
+            281.,
+            155.,
+            std::f32::consts::FRAC_PI_2,
+            false,
+        );
+        let mut changed = 0;
+        for y in 115..195 {
+            for x in 241..321 {
+                let at = y * W + x;
+                // Only the two indicator footprints may change, never the cap's lighting.
+                let top = (278..=284).contains(&x) && (125..=138).contains(&y);
+                let right = (299..=311).contains(&x) && (152..=158).contains(&y);
+                if !top && !right {
+                    assert_eq!(first[at], base[at]);
+                    assert_eq!(second[at], base[at]);
+                }
+                changed += usize::from(first[at] != second[at]);
+            }
+        }
+        assert!(changed > 20);
+    }
     #[test]
     fn artwork_controls_keep_the_hardware_matrix_ids() {
         for (id, x, y, w, h) in keys() {

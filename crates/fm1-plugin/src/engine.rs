@@ -135,6 +135,20 @@ fn restore_flash(soc: &mut Soc, sectors: &[(u32, Vec<u8>)]) {
     }
 }
 
+fn deliver_midi(mm: &mut Machine, params: &crate::Fm1Params, mut e: Midi) {
+    let relative = params.encoder_midi.lock().unwrap().route(e.bytes,e.len);
+    if let Some((enc,clicks)) = relative {
+        if enc<7 || mm.soc.board==Board::Smk37 {
+            if clicks!=0 {mm.soc.periph.apply(&Action::Enc{enc:enc as u8,clicks});}
+            return;
+        }
+    }
+    // Match the controller's actual channel before applying the firmware override.
+    let ch=params.channel.value() as u8;
+    if ch!=0 && e.bytes[0]&0xf0==0xb0 {e.bytes[0]=(e.bytes[0]&0xf0)|(ch-1);}
+    for &b in &e.bytes[..e.len as usize] {mm.soc.periph.apply(&Action::Midi { b });}
+}
+
 struct Snapshot {
     pkg: Arc<Vec<u8>>,
     reply: mpsc::Sender<Result<Vec<crate::Sector>, String>>,
@@ -333,10 +347,7 @@ pub fn run(
             std::thread::sleep(Duration::from_micros(500));
         } else {
             while due.front().is_some_and(|e| e.frame <= made) {
-                let e = due.pop_front().unwrap();
-                for &b in &e.bytes[..e.len as usize] {
-                    mm.soc.periph.apply(&Action::Midi { b });
-                }
+                deliver_midi(mm, &params, due.pop_front().unwrap());
             }
             let t0 = Instant::now();
             mm.run(20_000);
@@ -399,6 +410,33 @@ fn rtrb_fill(p: &rtrb::Producer<[f32; 2]>) -> usize {
 #[cfg(test)]
 mod portable_tests {
     use super::*;
+    #[test]
+    fn relative_preset_midi_keeps_selecting_beyond_63_turns_and_reverses() {
+        let params=crate::Fm1Params::default();
+        let mut m=Machine::boot(&params.firmware.lock().unwrap().pkg,&[],240,false).unwrap();
+        let start=Instant::now();
+        let advance=|m:&mut Machine,ms:u64| {
+            let target=m.soc.periph.ms()+ms;
+            while m.soc.periph.ms()<target && !m.halted && start.elapsed()<Duration::from_secs(30) {
+                m.run(20_000);m.soc.periph.audio.clear();
+            }
+            assert!(!m.halted);assert!(m.soc.periph.ms()>=target,"preset test timed out");
+        };
+        advance(&mut m,3000);
+        // Controller Ch 5 is deliberately different from the firmware's Ch 2 override.
+        params.encoder_midi.lock().unwrap().learning=Some(6);
+        for _ in 0..65 {deliver_midi(&mut m,&params,Midi{frame:0,bytes:[0xb4,21,65],len:3});advance(&mut m,80);}
+        let header=|m:&Machine| (0..28).flat_map(|y|(0..42).map(move |x|m.soc.lcd.fb[y*240+x])).collect::<Vec<_>>();
+        let after65=header(&m);
+        for _ in 0..10 {deliver_midi(&mut m,&params,Midi{frame:0,bytes:[0xb4,21,65],len:3});advance(&mut m,80);}
+        let after75=header(&m);
+        assert_ne!(after65,after75,"preset header must change past the old endpoint");
+        for _ in 0..10 {deliver_midi(&mut m,&params,Midi{frame:0,bytes:[0xb4,21,63],len:3});advance(&mut m,80);}
+        // The firmware may accelerate turns; assert browsing in both directions,
+        // without assuming that every physical detent selects exactly one preset.
+        assert_ne!(header(&m),after75,"reverse must change the preset number");
+        assert_eq!(params.encoder_midi.lock().unwrap().turns[6],65);
+    }
     #[test]
     fn bundled_stock_boots_draws_and_plays_a_midi_note() {
         let fw = crate::default_firmware::stock();

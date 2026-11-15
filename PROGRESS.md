@@ -204,3 +204,40 @@ Next: install the realistic package and verify pointer alignment, popup actions,
 knob linking and theme/project recall in FL Studio. Shortcut legends preserve
 existing physical key positions; their firmware behavior is not hardware-verified.
 OCT−/HOME LED timing remains unchanged.
+
+### 2026-11-14 — stationary knob lighting, endless MIDI encoders and labels
+
+- Removed baked pointer strokes from all theme assets. The renderer paints only
+  the rotating antialiased indicator over stationary reflections, knurling and
+  shadows. Corrected the master's absolute pointer angle after this separation.
+- Removed the center F'Em 1 mark and changed the bottom legend to exactly
+  "F'Em 1 - the Virtual Virtual FM Synthesizer" in all themes.
+- Identified the bounded host mapping: 0–127, initially 64, permits only 63 upward
+  movements. Kept existing host parameter IDs/ranges for project compatibility;
+  added Menu > MIDI encoders for direct binary-offset relative CC learning,
+  including the user's new FLkey 2 controller format (63=-1 / 65=+1).
+- Assignments persist by actual input channel and CC; learning/visual counters
+  do not persist. Learned CCs are consumed, other events continue to firmware.
+  Notes retain their original channel-override path; CC override happens after
+  learning on the machine thread. No new locks or allocations in audio callback.
+- Patched pinned clap-wrapper v0.16.0 to emit every queued MIDI point, instead of
+  dropping all but the last CC in each block. The checked-in patch applies on
+  CMake configure, recognizes an already patched source, and fails on mismatch.
+  Verified fresh patch application and repeated-configuration detection.
+- Validation: all 30 release tests passed, including 1,000 repeated forward and
+  1,200 reverse relative events, binding/state recall, stationary-lighting pixel
+  checks, and actual firmware preset-number changes beyond 63 turns and on
+  reversal. Rebuilt both artifacts; all 47 VST3 validator checks passed.
+- Updated FL Studio guide with official Novation configuration and matching
+  input-port instructions. Included FL-STUDIO.md in the Windows package:
+  target/plugin/release/fem1-plugin-0.5.1-windows-x86_64-encoders.zip.
+- Reviewed final artwork/legend. Published checkpoint through GitHub Git-object
+  tools and retained local history in a backup branch. The user's running DAW
+  installation was not overwritten.
+
+Next: close FL Studio and install both files with the package installer. For
+endless browsing, configure FLkey 2 Custom mode as 7-bit relative MIDI CC,
+remove the old bounded Presets link, route Custom-mode CCs to this instance,
+and use Menu > MIDI encoders > Presets > Learn. Physical controller/FL Studio
+routing has not been exercised here. Preset wrap/acceleration remains firmware
+behavior; the OCT−/HOME LED output remains unchanged.

@@ -30,7 +30,7 @@ function knob(x,y,label,angle=0){
  add('<circle r="37" fill="#090a0c" stroke="#414549" stroke-width="1.2"/><circle r="32" fill="url(#edge)"/>');
  for(let i=0;i<36;i++){const a=i*Math.PI/18;const xx=Math.sin(a), yy=Math.cos(a);add(`<path d="M${xx*29} ${yy*29} L${xx*32} ${yy*32}" stroke="${i<18?'#9b9da0':'#55595e'}" stroke-width="1.7"/>`);}
  add('<circle r="26" fill="url(#knob)" stroke="#0c0e10"/>');
- add(`<path d="M0 -20 L0 -27" stroke="#eeeeea" stroke-width="4" stroke-linecap="round" transform="rotate(${angle})"/>`);
+ add(`<path data-knob-indicator="true" d="M0 -20 L0 -27" stroke="#eeeeea" stroke-width="4" stroke-linecap="round" transform="rotate(${angle})"/>`);
  add('<path d="M-23 -7 A24 24 0 0 1 9 -23" fill="none" stroke="#a7adb2" opacity=".2"/>');
  add('</g>');
 }
@@ -65,7 +65,6 @@ tray(792,264,603,212);
 add('<circle cx="1093" cy="370" r="4" fill="#0b0d0e" stroke="#494d50"/>');
 // Retain plug-in settings as a quiet, matching panel key.
 button(1264,489,121,42,'MENU');
-text(750,510,"F’Em 1",15,'#8d9397','letter-spacing="3"');
 tray(58,545,1383,304,43);
 const labels=['OP1','OP2','OP3','OP4','OP5','OP6','PIT','GLO','MONO','POLY',''];
 function key(x,y,w,h,label){
@@ -82,7 +81,7 @@ const upper=[123,207,291,460,544,713,797,881,1050,1134,1303];
 upper.forEach((x,i)=>key(x,565,72,133,labels[i]));
 for(let i=0;i<16;i++)key(80+i*84,706,72,130,'');
 for(let i=0;i<4;i++)add(`<circle cx="${414+i*253}" cy="704" r="4" fill="#0d0f11" stroke="#4c5256" stroke-width="1"/>`);
-text(750,871,'FIRMWARE-POWERED FM SYNTHESIZER',10,'#666d72','letter-spacing="2.5"');
+text(750,871,"F'Em 1 - the Virtual Virtual FM Synthesizer",13,'#8d9397','letter-spacing="1.4"');
 add('</svg>');
 const out=path.join(__dirname,'realistic-panel-preview.svg');fs.writeFileSync(out,svg.join('\n'));
 if(process.argv.includes('--png')){
@@ -96,10 +95,11 @@ if(process.argv.includes('--assets')) (async()=>{
  const dir=path.join(__dirname,'../../crates/fm1-plugin/resources/panel'); fs.mkdirSync(dir,{recursive:true});
  const themes={black:[],green:[['#393d41','#afd1b6'],['#292c30','#90b49a'],['#202327','#71947b']],orange:[['#303235','#ed8a3d'],['#222427','#d77731'],['#1b1d20','#b65a24']],purple:[['#303235','#a99ac7'],['#222427','#9180b1'],['#1b1d20','#746192'],['#393d41','#d2c6e3'],['#292c30','#b4a4cc'],['#202327','#9987b3']],white:[['#303235','#e1e5e6'],['#222427','#cbd1d3'],['#1b1d20','#a5afb4'],['#393d41','#8eacc8'],['#292c30','#7192b3'],['#202327','#537493']]};
  for(const [name,replacements] of Object.entries(themes)){
-  let source=svg.join('\n').replace(/<g id="sample-screen">[\s\S]*?<\/g>/,'<rect x="424" y="123" width="282" height="263" fill="#000"/>');
+  let source=svg.join('\n').replace(/<g id="sample-screen">[\s\S]*?<\/g>/,'<rect x="424" y="123" width="282" height="263" fill="#000"/>')
+   .replace(/<path data-knob-indicator="true"[^>]*\/>/g,'');
   for(const [from,to] of replacements) source=source.replaceAll(from,to);
   if(name==='green'||name==='purple') for(const ink of ['#eff0ec','#e5e8e5'])source=source.replaceAll(ink,name==='green'?'#263d2d':'#352744');
-  if(['orange','purple','white'].includes(name)) source=source.replaceAll('#dedfdc','#303338');
+  if(['orange','purple','white'].includes(name)) source=source.replaceAll('#dedfdc','#303338').replaceAll('#8d9397','#485156');
   const png=new Resvg(source,{font:{loadSystemFonts:true}}).render().asPng();
   await sharp(png).png({palette:true,colours:128,dither:0,compressionLevel:9}).toFile(path.join(dir,`${name}.png`));
  }

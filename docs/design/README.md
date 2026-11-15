@@ -19,7 +19,9 @@ screen is removed from every embedded theme; the Rust renderer fills that area
 from the live 240×240 RGB565 firmware framebuffer.
 
 `realistic_panel.rs` owns the matching hit geometry and dynamic rendering. It
-rotates knob caps, shades held keys, and tints caps from firmware LED output.
+draws rotating pointer strokes over stationary knob caps, shades held keys,
+and tints caps from firmware LED output. Embedded caps omit the pointer so
+reflections, knurling and shadows stay fixed as the indicator moves.
 Hardware matrix IDs and encoder parameter IDs are unchanged. Printed shortcut
 legends identify the same keyboard pads as the physical reference; their
 firmware-specific behavior has not been independently compared with hardware.

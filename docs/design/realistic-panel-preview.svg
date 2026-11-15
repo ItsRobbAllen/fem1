@@ -57,7 +57,7 @@
 <path d="M-9.918584156444389 27.251086002791343 L-10.944644586421395 30.07016386514907" stroke="#55595e" stroke-width="1.7"/>
 <path d="M-5.035797152340981 28.559424837354033 L-5.556741685341772 31.513848096390657" stroke="#55595e" stroke-width="1.7"/>
 <circle r="26" fill="url(#knob)" stroke="#0c0e10"/>
-<path d="M0 -20 L0 -27" stroke="#eeeeea" stroke-width="4" stroke-linecap="round" transform="rotate(-15)"/>
+<path data-knob-indicator="true" d="M0 -20 L0 -27" stroke="#eeeeea" stroke-width="4" stroke-linecap="round" transform="rotate(-15)"/>
 <path d="M-23 -7 A24 24 0 0 1 9 -23" fill="none" stroke="#a7adb2" opacity=".2"/>
 </g>
 <text x="281" y="86" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#dedfdc" letter-spacing=".8">SELECT</text>
@@ -100,7 +100,7 @@
 <path d="M-9.918584156444389 27.251086002791343 L-10.944644586421395 30.07016386514907" stroke="#55595e" stroke-width="1.7"/>
 <path d="M-5.035797152340981 28.559424837354033 L-5.556741685341772 31.513848096390657" stroke="#55595e" stroke-width="1.7"/>
 <circle r="26" fill="url(#knob)" stroke="#0c0e10"/>
-<path d="M0 -20 L0 -27" stroke="#eeeeea" stroke-width="4" stroke-linecap="round" transform="rotate(0)"/>
+<path data-knob-indicator="true" d="M0 -20 L0 -27" stroke="#eeeeea" stroke-width="4" stroke-linecap="round" transform="rotate(0)"/>
 <path d="M-23 -7 A24 24 0 0 1 9 -23" fill="none" stroke="#a7adb2" opacity=".2"/>
 </g>
 <text x="126" y="243" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#dedfdc" letter-spacing=".8">PRESETS</text>
@@ -143,7 +143,7 @@
 <path d="M-9.918584156444389 27.251086002791343 L-10.944644586421395 30.07016386514907" stroke="#55595e" stroke-width="1.7"/>
 <path d="M-5.035797152340981 28.559424837354033 L-5.556741685341772 31.513848096390657" stroke="#55595e" stroke-width="1.7"/>
 <circle r="26" fill="url(#knob)" stroke="#0c0e10"/>
-<path d="M0 -20 L0 -27" stroke="#eeeeea" stroke-width="4" stroke-linecap="round" transform="rotate(0)"/>
+<path data-knob-indicator="true" d="M0 -20 L0 -27" stroke="#eeeeea" stroke-width="4" stroke-linecap="round" transform="rotate(0)"/>
 <path d="M-23 -7 A24 24 0 0 1 9 -23" fill="none" stroke="#a7adb2" opacity=".2"/>
 </g>
 <text x="281" y="243" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#dedfdc" letter-spacing=".8">ALGORITHM</text>
@@ -186,7 +186,7 @@
 <path d="M-9.918584156444389 27.251086002791343 L-10.944644586421395 30.07016386514907" stroke="#55595e" stroke-width="1.7"/>
 <path d="M-5.035797152340981 28.559424837354033 L-5.556741685341772 31.513848096390657" stroke="#55595e" stroke-width="1.7"/>
 <circle r="26" fill="url(#knob)" stroke="#0c0e10"/>
-<path d="M0 -20 L0 -27" stroke="#eeeeea" stroke-width="4" stroke-linecap="round" transform="rotate(0)"/>
+<path data-knob-indicator="true" d="M0 -20 L0 -27" stroke="#eeeeea" stroke-width="4" stroke-linecap="round" transform="rotate(0)"/>
 <path d="M-23 -7 A24 24 0 0 1 9 -23" fill="none" stroke="#a7adb2" opacity=".2"/>
 </g>
 <text x="839" y="86" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#dedfdc" letter-spacing=".8">KNOB1</text>
@@ -229,7 +229,7 @@
 <path d="M-9.918584156444389 27.251086002791343 L-10.944644586421395 30.07016386514907" stroke="#55595e" stroke-width="1.7"/>
 <path d="M-5.035797152340981 28.559424837354033 L-5.556741685341772 31.513848096390657" stroke="#55595e" stroke-width="1.7"/>
 <circle r="26" fill="url(#knob)" stroke="#0c0e10"/>
-<path d="M0 -20 L0 -27" stroke="#eeeeea" stroke-width="4" stroke-linecap="round" transform="rotate(0)"/>
+<path data-knob-indicator="true" d="M0 -20 L0 -27" stroke="#eeeeea" stroke-width="4" stroke-linecap="round" transform="rotate(0)"/>
 <path d="M-23 -7 A24 24 0 0 1 9 -23" fill="none" stroke="#a7adb2" opacity=".2"/>
 </g>
 <text x="1008" y="86" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#dedfdc" letter-spacing=".8">KNOB2</text>
@@ -272,7 +272,7 @@
 <path d="M-9.918584156444389 27.251086002791343 L-10.944644586421395 30.07016386514907" stroke="#55595e" stroke-width="1.7"/>
 <path d="M-5.035797152340981 28.559424837354033 L-5.556741685341772 31.513848096390657" stroke="#55595e" stroke-width="1.7"/>
 <circle r="26" fill="url(#knob)" stroke="#0c0e10"/>
-<path d="M0 -20 L0 -27" stroke="#eeeeea" stroke-width="4" stroke-linecap="round" transform="rotate(0)"/>
+<path data-knob-indicator="true" d="M0 -20 L0 -27" stroke="#eeeeea" stroke-width="4" stroke-linecap="round" transform="rotate(0)"/>
 <path d="M-23 -7 A24 24 0 0 1 9 -23" fill="none" stroke="#a7adb2" opacity=".2"/>
 </g>
 <text x="1177" y="86" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#dedfdc" letter-spacing=".8">KNOB3</text>
@@ -315,7 +315,7 @@
 <path d="M-9.918584156444389 27.251086002791343 L-10.944644586421395 30.07016386514907" stroke="#55595e" stroke-width="1.7"/>
 <path d="M-5.035797152340981 28.559424837354033 L-5.556741685341772 31.513848096390657" stroke="#55595e" stroke-width="1.7"/>
 <circle r="26" fill="url(#knob)" stroke="#0c0e10"/>
-<path d="M0 -20 L0 -27" stroke="#eeeeea" stroke-width="4" stroke-linecap="round" transform="rotate(0)"/>
+<path data-knob-indicator="true" d="M0 -20 L0 -27" stroke="#eeeeea" stroke-width="4" stroke-linecap="round" transform="rotate(0)"/>
 <path d="M-23 -7 A24 24 0 0 1 9 -23" fill="none" stroke="#a7adb2" opacity=".2"/>
 </g>
 <text x="1346" y="86" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#dedfdc" letter-spacing=".8">KNOB4</text>
@@ -358,7 +358,7 @@
 <path d="M-9.918584156444389 27.251086002791343 L-10.944644586421395 30.07016386514907" stroke="#55595e" stroke-width="1.7"/>
 <path d="M-5.035797152340981 28.559424837354033 L-5.556741685341772 31.513848096390657" stroke="#55595e" stroke-width="1.7"/>
 <circle r="26" fill="url(#knob)" stroke="#0c0e10"/>
-<path d="M0 -20 L0 -27" stroke="#eeeeea" stroke-width="4" stroke-linecap="round" transform="rotate(0)"/>
+<path data-knob-indicator="true" d="M0 -20 L0 -27" stroke="#eeeeea" stroke-width="4" stroke-linecap="round" transform="rotate(0)"/>
 <path d="M-23 -7 A24 24 0 0 1 9 -23" fill="none" stroke="#a7adb2" opacity=".2"/>
 </g>
 <rect x="389" y="80" width="353" height="361" rx="40" fill="#050607" stroke="#414548" stroke-width="1.5"/>
@@ -476,7 +476,6 @@
 <rect x="1270" y="495" width="109" height="29" rx="8" fill="url(#rubber)" stroke="#0e1012" stroke-width="1.4"/>
 <path d="M1276 497 H1370" stroke="#a9aeb2" stroke-opacity=".16"/>
 <text x="1324.5" y="516" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" fill="#eff0ec" font-weight="bold" letter-spacing=".5">MENU</text>
-<text x="750" y="510" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#8d9397" letter-spacing="3">F’Em 1</text>
 <rect x="58" y="545" width="1383" height="304" rx="43" fill="#08090a" stroke="#82878a" stroke-opacity=".5"/>
 <rect x="61" y="548" width="1377" height="298" rx="41" fill="url(#tray)" stroke="#090a0b" stroke-width="2"/>
 <rect x="123" y="565" width="72" height="133" rx="36" fill="#101214" filter="url(#shadow)"/>
@@ -655,5 +654,5 @@
 <circle cx="667" cy="704" r="4" fill="#0d0f11" stroke="#4c5256" stroke-width="1"/>
 <circle cx="920" cy="704" r="4" fill="#0d0f11" stroke="#4c5256" stroke-width="1"/>
 <circle cx="1173" cy="704" r="4" fill="#0d0f11" stroke="#4c5256" stroke-width="1"/>
-<text x="750" y="871" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#666d72" letter-spacing="2.5">FIRMWARE-POWERED FM SYNTHESIZER</text>
+<text x="750" y="871" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#8d9397" letter-spacing="1.4">F'Em 1 - the Virtual Virtual FM Synthesizer</text>
 </svg>

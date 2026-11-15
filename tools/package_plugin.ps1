@@ -17,6 +17,7 @@ foreach ($b in 'FEm1.vst3', 'FEm1.clap') {
     Copy-Item "$out\$b" "$rel\$name\$b" -Recurse
 }
 Copy-Item -LiteralPath 'tools\install_plugin.ps1' -Destination "$rel\$name\Install.ps1"
+Copy-Item -LiteralPath 'docs\FEM1-FL-STUDIO.md' -Destination "$rel\$name\FL-STUDIO.md"
 New-Item -ItemType Directory -Force "$rel\$name\licenses\mvave" | Out-Null
 foreach ($notice in 'NOTICE.md', 'THIRD_PARTY.md', 'LICENSE-2.0.txt') {
     Copy-Item -LiteralPath "crates\fm1-plugin\resources\mvave\$notice" -Destination "$rel\$name\licenses\mvave\$notice"

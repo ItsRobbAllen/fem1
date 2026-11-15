@@ -59,6 +59,8 @@ pub struct Fm1Params {
     pub flash: Mutex<Vec<Sector>>,
     #[persist = "case-color"]
     pub case_color: Mutex<appearance::CaseColor>,
+    #[persist = "encoder-midi"]
+    pub encoder_midi: Mutex<controls::MidiEncoders>,
     #[nested]
     pub encoders: controls::Encoders,
 
@@ -165,6 +167,7 @@ impl Default for Fm1Params {
             flash: Mutex::new(Vec::new()),
             case_color: Mutex::new(appearance::CaseColor::default()),
             encoders: controls::Encoders::default(),
+            encoder_midi: Mutex::new(controls::MidiEncoders::default()),
             master: FloatParam::new("Master", 900.0 / 1023.0, FloatRange::Linear { min: 0.0, max: 1.0 })
                 .with_unit(" %")
                 .with_value_to_string(formatters::v2s_f32_percentage(0))
@@ -360,7 +363,9 @@ impl Plugin for Fm1 {
             if len == 0 {
                 continue;
             }
-            if ch != 0 {
+            // CC learning needs the real controller channel. Its firmware override
+            // is applied on the machine thread after relative-encoder routing.
+            if ch != 0 && b[0] & 0xf0 != 0xb0 {
                 b[0] = (b[0] & 0xf0) | (ch - 1);
             }
             let frame = start + (at as f64 * self.ratio) as u64 + self.lead as u64;
