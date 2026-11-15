@@ -261,3 +261,35 @@ behavior; the OCT−/HOME LED output remains unchanged.
 
 Next: select reference/firmwares/fm106.fwsc via Menu > Load firmware / save…
 in F'Em 1, then play it in FL Studio and save the project to retain that firmware.
+
+### 2026-11-14 — readable notifications and stronger plug-in output
+
+- Moved error/system text from the tiny case overlay under OCT into a dedicated
+  bottom notification panel outside the artwork. Uses 15–16 point text, a solid
+  contrasting background, severity accents, wrapping and Dismiss. Text does not
+  scale down with the case. Error details remain in the menu after dismissal.
+- Measured signed PCM output before choosing gain. At MASTER=900, velocity-100
+  C4 / three-note chord: stock peak −19.77 / −13.40 dBFS, RMS −28.70 / −25.57;
+  FM-106 peak −29.86 / −25.67 dBFS, RMS −43.06 / −38.90. PCM normalization is
+  correct; firmware output levels vary substantially. Raw measurements are in
+  target/plugin/output-level-probe.log, from an opt-in ignored diagnostic test.
+- Added stable host parameter output-gain and Menu > Output. Post-firmware gain
+  defaults to +12 dB, adjustable −24..+24 dB, with 20 ms logarithmic smoothing.
+  MASTER retains its original firmware control. Older projects without the new
+  parameter inherit +12 dB; 0 dB is available for unity gain.
+- Added stereo-linked peak protection at 0.98, instantaneous attack, 60 ms
+  recovery, no lookahead/extra latency. Output is linear below the ceiling.
+  Tests verify gain, stereo balance, peak bound, recovery and reset across rates.
+- Validation: all 32 automated release tests passed (one manual diagnostic is
+  ignored in normal runs); the explicit raw-level diagnostic also passed. Both
+  artifacts rebuilt and all 47 VST3 validator tests passed. Physical FL Studio
+  loudness/layout testing remains for the user.
+- Packaged target/plugin/release/fem1-plugin-0.5.1-windows-x86_64-output-status.zip
+  with the updated FL-STUDIO.md. Did not overwrite the running DAW installation.
+- Checkpoint publishing uses GitHub Git-object tools with matching local/remote
+  tree; local milestone history remains on a backup branch.
+
+Next: close FL Studio and install both files using the packaged installer.
+Check readable notifications on a failed import and dismiss them. Compare output
+at the +12 dB default; try +18..+24 dB for quiet FM-106 patches, then save the
+project. Reduce Output if peak protection audibly changes a loud patch's dynamics.

@@ -34,6 +34,8 @@ struct Ui {
     grab: Option<Grab>,
     wheel_acc: f32,
     msg: String,
+    msg_error: bool,
+    dismissed_status: String,
     msg_until: Option<std::time::Instant>,
     /// the file dialog's answer, while it is open
     picking: Option<(FileAction, Answer)>,
@@ -59,6 +61,8 @@ impl Default for Ui {
             grab: None,
             wheel_acc: 0.0,
             msg: String::new(),
+            msg_error: false,
+            dismissed_status: String::new(),
             msg_until: None,
             picking: None,
             job: None,
@@ -96,6 +100,8 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
         }
         if let Some(result) = ui.job.as_ref().and_then(|job| job.lock().unwrap().take()) {
             ui.job = None;
+            ui.msg_error = result.is_err();
+            ui.dismissed_status.clear();
             ui.msg_until = result.as_ref().ok().map(|_| std::time::Instant::now() + std::time::Duration::from_secs(3));
             ui.msg = match result { Ok(message) => message, Err(error) => error };
         }
@@ -104,6 +110,8 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
             ui.picking = None;
             if let Some(path) = path {
                 ui.msg_until = None;
+                ui.msg_error = false;
+                ui.dismissed_status.clear();
                 ui.msg = if matches!(action, FileAction::Load) { "Loading…" } else { "Exporting live flash…" }.into();
                 ui.job = Some(file_job(action, path, params.clone(), link.clone()));
             }
@@ -117,6 +125,36 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
             else if late > 0 { format!("{late} frames late — see Menu → Advanced") }
             else { String::new() };
 
+        // A dedicated strip outside the case remains legible in every theme and
+        // never overlaps keys or shrinks text along with the panel artwork.
+        if !status.is_empty() && status != ui.dismissed_status {
+            let error = (!ui.msg.is_empty() && ui.msg_error) || halted;
+            let warning = !error && late > 0 && ui.msg.is_empty();
+            let accent = if error { egui::Color32::from_rgb(255,153,145) }
+                else if warning { egui::Color32::from_rgb(255,207,117) }
+                else { egui::Color32::from_rgb(155,210,243) };
+            egui::TopBottomPanel::bottom("notifications").resizable(false)
+                .frame(egui::Frame::NONE.fill(egui::Color32::from_rgb(29,33,39))
+                    .stroke(egui::Stroke::new(1.0,accent)).inner_margin(egui::Margin::symmetric(14,10)))
+                .show(ctx, |bar| {
+                    bar.horizontal_top(|row| {
+                        row.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |row| {
+                            if row.button(egui::RichText::new("Dismiss").size(15.0)).clicked() {
+                                ui.dismissed_status = status.clone();
+                            }
+                            let width = row.available_width();
+                            row.vertical(|body| {
+                                body.set_width(width);
+                                let heading = if error { "Couldn't complete that action" }
+                                    else if warning { "Audio performance" } else { "Instrument status" };
+                                body.label(egui::RichText::new(heading).size(16.0).strong().color(accent));
+                                body.add(egui::Label::new(egui::RichText::new(&status).size(15.0)
+                                    .color(egui::Color32::from_rgb(245,247,250))).wrap());
+                            });
+                        });
+                    });
+                });
+        }
         egui::CentralPanel::default().frame(egui::Frame::NONE.fill(egui::Color32::from_rgb(0x18, 0x19, 0x1b))).show(ctx, |c| {
             let avail = c.available_rect_before_wrap();
             let k = (avail.width() / w as f32).min(avail.height() / h as f32);
@@ -311,6 +349,17 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
                             }
                         }
                     }); }
+                    menu.menu_button("Output", |output| {
+                        output.set_width(280.0);
+                        output.label("Output level");
+                        output.add(widgets::ParamSlider::for_param(&params.output_gain, setter).with_width(240.0));
+                        output.add(egui::Label::new(egui::RichText::new("Boost quiet firmware here. Peak protection limits louder peaks; MASTER still controls the instrument itself.").small()).wrap());
+                        if output.button("Set to 0 dB").clicked() {
+                            setter.begin_set_parameter(&params.output_gain);
+                            setter.set_parameter(&params.output_gain,1.0);
+                            setter.end_set_parameter(&params.output_gain);
+                        }
+                    });
                     menu.menu_button("MIDI encoders", |midi| {
                         midi.set_min_width(360.0);
                         midi.label("Endless / Relative · FLkey 2");
@@ -344,10 +393,6 @@ pub fn create(params: Arc<Fm1Params>, link: Arc<Link>) -> Option<Box<dyn Editor>
                     if !status.is_empty() { menu.separator(); menu.label(&status); }
                 });
             });
-            if !status.is_empty() {
-                let text_rect = egui::Rect::from_min_max(rect.min + egui::vec2(40.0 * k, 468.0 * k), rect.min + egui::vec2(335.0 * k, 548.0 * k));
-                c.scope_builder(egui::UiBuilder::new().max_rect(text_rect), |m| { m.small(&status); });
-            }
         });
         ctx.request_repaint_after(std::time::Duration::from_millis(33));
     })

@@ -411,6 +411,28 @@ fn rtrb_fill(p: &rtrb::Producer<[f32; 2]>) -> usize {
 mod portable_tests {
     use super::*;
     #[test]
+    #[ignore = "manual raw firmware peak/RMS measurement"]
+    fn measure_firmware_output_levels() {
+        for name in ["stock","fm106"] {
+            let bytes=if name=="stock" {crate::default_firmware::stock().pkg.as_ref().clone()}
+                else {std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"),"/../../reference/firmwares/fm106.fwsc")).unwrap()};
+            let mut m=Machine::boot(&bytes,&[],240,false).unwrap();
+            m.soc.periph.apply(&Action::Adc{ch:4,value:900});
+            let start=Instant::now();let mut sent=false;let mut chord=false;
+            let mut peak=[0_f64;2];let mut squares=[0_f64;2];let mut count=[0_u64;2];
+            while m.soc.periph.ms()<6000 && !m.halted && start.elapsed()<Duration::from_secs(30) {
+                let ms=m.soc.periph.ms();
+                if ms>=3000 && !sent {for b in [0x91,60,100]{m.soc.periph.apply(&Action::Midi{b});}sent=true;}
+                if ms>=4500 && !chord {for note in [64,67]{for b in [0x91,note,100]{m.soc.periph.apply(&Action::Midi{b});}}chord=true;}
+                m.run(20_000);
+                if sent {let i=usize::from(chord);for &s in &m.soc.periph.audio {let v=s as f64/32768.;peak[i]=peak[i].max(v.abs());squares[i]+=v*v;count[i]+=1;}}
+                m.soc.periph.audio.clear();
+            }
+            assert!(!m.halted);assert!(m.soc.periph.ms()>=6000);
+            for i in 0..2 {eprintln!("LEVEL {name} {} peak={:.2}dBFS rms={:.2}dBFS samples={}",if i==0 {"note"}else{"chord"},20.*peak[i].log10(),10.*(squares[i]/count[i].max(1) as f64).log10(),count[i]);}
+        }
+    }
+    #[test]
     fn relative_preset_midi_keeps_selecting_beyond_63_turns_and_reverses() {
         let params=crate::Fm1Params::default();
         let mut m=Machine::boot(&params.firmware.lock().unwrap().pkg,&[],240,false).unwrap();

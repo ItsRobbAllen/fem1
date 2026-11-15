@@ -18,6 +18,7 @@ mod editor;
 mod appearance;
 mod panel_menu;
 mod realistic_panel;
+mod output;
 mod default_firmware;
 mod controls;
 pub mod engine;
@@ -67,6 +68,9 @@ pub struct Fm1Params {
     /// The MASTER pot.
     #[id = "master"]
     pub master: FloatParam,
+    /// Post-firmware output trim, independent of the hardware's MASTER ADC.
+    #[id = "output-gain"]
+    pub output_gain: FloatParam,
     /// 0: channel messages as the host sends them; 1..16: moved to that channel.
     #[id = "channel"]
     pub channel: IntParam,
@@ -172,6 +176,12 @@ impl Default for Fm1Params {
                 .with_unit(" %")
                 .with_value_to_string(formatters::v2s_f32_percentage(0))
                 .with_string_to_value(formatters::s2v_f32_percentage()),
+            output_gain: FloatParam::new("Output level", util::db_to_gain(12.0), FloatRange::Skewed {
+                min: util::db_to_gain(-24.0), max: util::db_to_gain(24.0),
+                factor: FloatRange::gain_skew_factor(-24.0,24.0),
+            }).with_smoother(SmoothingStyle::Logarithmic(20.0)).with_unit(" dB")
+                .with_value_to_string(formatters::v2s_f32_gain_to_db(1))
+                .with_string_to_value(formatters::s2v_f32_gain_to_db()),
             channel: IntParam::new("MIDI channel", 2, IntRange::Linear { min: 0, max: 16 })
                 .with_value_to_string(Arc::new(|v| if v == 0 { "as sent".into() } else { v.to_string() })),
             clock: EnumParam::new("CPU clock", Clock::Mhz240).non_automatable(),
@@ -219,6 +229,7 @@ pub struct Fm1 {
     frac: f64,
     cur: [f32; 2],
     next: [f32; 2],
+    peak_guard: output::PeakGuard,
 }
 
 impl Default for Fm1 {
@@ -237,6 +248,7 @@ impl Default for Fm1 {
             frac: 0.0,
             cur: [0.0; 2],
             next: [0.0; 2],
+            peak_guard: output::PeakGuard::default(),
         }
     }
 }
@@ -330,6 +342,7 @@ impl Plugin for Fm1 {
     }
 
     fn initialize(&mut self, _layout: &AudioIOLayout, cfg: &BufferConfig, ctx: &mut impl InitContext<Self>) -> bool {
+        self.peak_guard.reset(cfg.sample_rate);
         let link = self.start();
         self.ratio = RATE / cfg.sample_rate as f64;
         // a host block's frames, and the lead chosen: room for a DMA half and the emulation's unevenness
@@ -396,8 +409,11 @@ impl Plugin for Fm1 {
                 }
             }
             let t = self.frac.min(1.0) as f32;
+            let gain = self.params.output_gain.smoothed.next();
+            let frame = self.peak_guard.process(std::array::from_fn(|c|
+                (self.cur[c] + (self.next[c] - self.cur[c]) * t) * gain));
             for c in 0..2 {
-                out[c][i] = self.cur[c] + (self.next[c] - self.cur[c]) * t;
+                out[c][i] = frame[c];
             }
         }
         if starved > 0 {
