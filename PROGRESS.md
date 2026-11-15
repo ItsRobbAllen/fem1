@@ -241,3 +241,23 @@ remove the old bounded Presets link, route Custom-mode CCs to this instance,
 and use Menu > MIDI encoders > Presets > Learn. Physical controller/FL Studio
 routing has not been exercised here. Preset wrap/acceleration remains firmware
 behavior; the OCT−/HOME LED output remains unchanged.
+
+### 2026-11-14 — FM-106 package for local loading
+
+- Downloaded the catalog-listed FM-106 1.0 package to the user's chosen folder:
+  reference/firmwares/fm106.fwsc, 611486 bytes, identity FM-1_907.
+  Source: https://thefirmwarehub.com/fw/fm106-1.0.fwsc
+  Upstream: https://github.com/PatttF/fm-106
+  SHA256: 41746d625216f1647964c7d8993be3e0b9e1950b415288e723603fa5f8c45ca6.
+- Initial download-check code passed a Node Buffer into a parser whose slice
+  operations mutate Buffer views. Corrected it to validate a copied Uint8Array
+  before saving pristine downloaded bytes. Replaced the affected files; removed
+  redundant copies created in this session, retaining the single working package.
+- Native package parsing passed. The existing plug-in engine's UI-only boot test
+  passed with FM1_TEST_FW=fm106: 35678 nonzero LCD pixels, 2.8x headroom. Log:
+  target/plugin/fm106-boot-check.log. This verifies startup/display, not MIDI/audio
+  performance across every patch. No plug-in rebuild or USB hardware required.
+- Firmware stays local/ignored; only this progress record is checkpointed.
+
+Next: select reference/firmwares/fm106.fwsc via Menu > Load firmware / save…
+in F'Em 1, then play it in FL Studio and save the project to retain that firmware.
